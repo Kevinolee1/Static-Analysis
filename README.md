@@ -67,6 +67,8 @@ We're trying to determine:
 
 User request → Route → Authentication → book_id → edit_book_read_status() → authorization check → database change
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/8d9d02c02eabdf35e1f00b6407ed466e8599c48c/Screenshot%202026-09-08%20113751.png)
+
 The screenshot above ^ gives us four matches:
 
 editbooks.py — line 732
