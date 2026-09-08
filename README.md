@@ -52,3 +52,8 @@ Your prompt should now start with: (.venv) PS C:\Users\eelve\Vulnerability-Resea
 Now verify Semgrep: semgrep --version
 
 Then verify CodeQL: codeql version
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/44992dcb79c6d19121648add5867fb57874c700e/Screenshot%202026-09-08%20011307.png)
+
+**Trace Our First Hypothesis**
+
