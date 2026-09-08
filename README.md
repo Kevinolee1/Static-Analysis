@@ -116,7 +116,7 @@ Run: Get-Content .\cps\editbooks.py | Select-Object -Skip 700 -First 70
 
 We want to compare whether that caller performs stronger object-level authorization before calling edit_book_read_status().
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/9a0fa5f55ab5fce6de5e1a0191668a58c6b4b52f/Screenshot%202026-09-08%20115144.png)
 
 This editbooks.py caller is different from the web.py route.
 
