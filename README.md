@@ -558,6 +558,8 @@ If book_id also lacks an appropriate constraint, we'll continue false-positive e
 
 Run: Select-String -Path .\cps\ub.py -Pattern "class ArchivedBook" | Select-Object LineNumber, Line
 
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a0754b115195e87c814cc8f51a6e3fb685e4170e/Screenshot%202026-09-08%20143707.png))
+
 The above ^ screenshot confirms:
 
 Line 796: class ArchivedBook(Base):
@@ -590,7 +592,7 @@ is_archived
 
 The key question is whether the database independently requires book_id to correspond to a valid book
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a0754b115195e87c814cc8f51a6e3fb685e4170e/Screenshot%202026-09-08%20143707.png)
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f2ca92a3f896d7e2cb9479adbb278ed435e5894e/Screenshot%202026-09-08%20143905.png)
 
 This confirms the archive-status hypothesis survives static analysis too. 
 
