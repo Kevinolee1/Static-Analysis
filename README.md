@@ -357,7 +357,7 @@ Relationships / validation
 
 This matters because we want to determine whether the database itself prevents the suspicious read-status path from operating on an inappropriate book_id.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/bae456bd8c7e831fb056a12954b0127590f3ab52/Screenshot%202026-09-08%20141105.png)
 
 This is an important result. The database model does not eliminate our hypothesis.
 
