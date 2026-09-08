@@ -45,6 +45,8 @@ Activate the virtual environment: Set-ExecutionPolicy -Scope Process -ExecutionP
 
 Then: .venv\Scripts\Activate.ps1
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ce490799113e1816f075fc08e0a079e958c74b84/Screenshot%202026-09-08%20011002.png)
+
 Your prompt should now start with: (.venv) PS C:\Users\eelve\Vulnerability-Research-Lab>
 
 Now verify Semgrep: semgrep --version
