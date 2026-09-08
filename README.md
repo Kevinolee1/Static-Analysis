@@ -513,6 +513,8 @@ ArchivedBook lookup/create
    
 Database write
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f6576470d4abfc581fb81b8d17d961fe0e50ae3e/Screenshot%202026-09-08%20143344.png)
+
 This will tell us whether the archive-status hypothesis survives deeper static analysis the way the read-status hypothesis did.
 
 
