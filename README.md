@@ -146,7 +146,7 @@ calibre_db.get_filtered_book(...)
 
 before the read_status branch.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1dea1c691012a74171d63a4ad5a95750d2515c59/Screenshot%202026-09-08%20115545.png)
 
 This output is still inside the middle of the same editing function, so we haven’t reached the part where the book object is originally loaded.
 
