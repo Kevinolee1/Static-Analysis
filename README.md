@@ -266,7 +266,7 @@ We're specifically looking for:
 
 book_id → book lookup/visibility validation → current_user.id → database query/create/update → commit
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/3b51374fa3a60c6b0d737fd1f2daba964f89e0d5/Screenshot%202026-09-08%20135552.png)
 
 This gives us enough evidence to make our first Lab 4 static-analysis assessment.
 
