@@ -469,6 +469,10 @@ Run:Select-String -Path .\cps\*.py -Pattern "change_archived_books\(" | Select-O
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/7433e1e110650e5454c6191cfde7c49e9fa9d12d/Screenshot%202026-09-08%20142020.png)
 
+We found five locations involving change_archived_books
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0f772abdbd0b1a56640b13390c8888ce0cf1c03e/Screenshot%202026-09-08%20143102.png)
+
 The most important one to start with is web.py line 355, because we already saw that it is reachable by an ordinary authenticated user:
 
 @web.route("/ajax/togglearchived/<int:book_id>", methods=['POST'])
