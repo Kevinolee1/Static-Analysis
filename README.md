@@ -37,3 +37,16 @@ Static-analysis results only mean something if we can tie them to a specific ver
 
 Take screenshots of the commands and outputs for your portfolio.
 
+**Verify Static Analysis Tools**
+
+First, return to your research-project root: cd C:\Users\eelve\Vulnerability-Research-Lab
+
+Activate the virtual environment: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+Then: .venv\Scripts\Activate.ps1
+
+Your prompt should now start with: (.venv) PS C:\Users\eelve\Vulnerability-Research-Lab>
+
+Now verify Semgrep: semgrep --version
+
+Then verify CodeQL: codeql version
