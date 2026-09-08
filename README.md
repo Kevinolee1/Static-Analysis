@@ -410,7 +410,7 @@ Let's see whether that model adds any additional constraint.
 
 Run: Select-String -Path .\cps\ub.py -Pattern "class KoboReadingState" | Select-Object LineNumber, Line
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/52fad61f1d1cd0396bb76f5a1031633d44fc52c4/Screenshot%202026-09-08%20141510.png)
 
 We found the model at:
 
