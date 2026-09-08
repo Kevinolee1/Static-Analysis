@@ -424,7 +424,7 @@ We're looking specifically for:
 
 book_id → ForeignKey? → user_id → uniqueness constraints → relationships
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/63df89b5846c9d04a922c391ec1753b01906a860/Screenshot%202026-09-08%20141722.png)
 
 This confirms the same pattern in KoboReadingState.
 
