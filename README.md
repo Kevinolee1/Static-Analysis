@@ -91,8 +91,7 @@ We're looking for the route above line 345 and specifically:
 
 Route → HTTP method → authentication decorator → book_id → edit_book_read_status()
 
-
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1c068156d98afc1ac3ee4ec52cdc0d90ab32ffa0/Screenshot%202026-09-08%20114756.png)
 
 This confirms an important part of the read-status hypothesis.
 
