@@ -194,7 +194,7 @@ book variable
   
 edit_book_read_status(book.id)
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/9db608f05260ad0b1c235fcdf5bb6bf684b8d146/Screenshot%202026-09-08%20121046.png)
 
 This gives us the missing context.
 
