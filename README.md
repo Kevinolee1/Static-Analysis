@@ -160,6 +160,8 @@ If we find one in the same function, that would show this editbooks.py path has 
 
 helper.edit_book_read_status(book.id, ...)
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/53ec93e11ae23160764a9ada2bdcb34d639b1dce/Screenshot%202026-09-08%20115757.png)
+
 The get_filtered_book() calls are at lines 797, 1013, 1695, and 1931. Our first edit_book_read_status() call was around line 732.
 
 So there is no get_filtered_book() call before line 732 shown by this search. That makes it more important to identify exactly how the book variable used at line 732 was obtained. It could be loaded through another function that still enforces access control.
