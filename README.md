@@ -57,3 +57,22 @@ Then verify CodeQL: codeql version
 
 **Trace Our First Hypothesis**
 
+Go back into the target: cd .\targets\Calibre-Web-NextGen
+
+Now find everywhere edit_book_read_status() is called: Select-String -Path .\cps\*.py -Pattern "edit_book_read_status\(" | Select-Object Path, LineNumber, Line
+
+We're trying to determine:
+
+User request → Route → Authentication → book_id → edit_book_read_status() → authorization check → database change
+
+The screenshot above ^ gives us four matches:
+
+editbooks.py — line 732
+editbooks.py — line 874
+helper.py — line 911, the function definition
+web.py — line 345
+
+The important discovery is that there are three callers, not just the web.py path we focused on during Lab 3.
+
+**Inspect the first caller**
+
