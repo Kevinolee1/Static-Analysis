@@ -168,7 +168,7 @@ So there is no get_filtered_book() call before line 732 shown by this search. Th
 
 **Find where book is loaded** 
 
-Run:
+Run: Get-Content .\cps\editbooks.py | Select-Object -Skip 540 -First 70
 
 We're looking for the beginning of that function and specifically something like:
 
@@ -193,3 +193,110 @@ book variable
   ↓
   
 edit_book_read_status(book.id)
+
+
+
+This gives us the missing context.
+
+The editbooks.py path is protected by:
+
+@login_required_if_no_ano
+
+@edit_required
+
+@metadata_db_write_lock()
+
+def edit_book_param(param, vals):
+
+and then loads the book with:
+
+book = calibre_db.get_book(vals['pk'])
+
+So this path has a stronger role boundary than the regular /ajax/toggleread/<book_id> route: the caller must have the edit role (or whatever edit_required permits). It does not use get_filtered_book() here, but that does not automatically indicate a flaw because this is a privileged metadata-editing workflow.
+
+Our current comparison is:
+
+Regular read-status route
+POST /ajax/toggleread/<book_id> → @user_login_required → raw book_id → edit_book_read_status(book_id)
+
+Privileged editor path
+authenticated user → @edit_required → get_book(vals['pk']) → edit_book_read_status(book.id)
+
+The regular-user path remains the more important hypothesis because it accepts a user-controlled book ID without an obvious visibility check in the route.
+
+Inspect the second editbooks.py caller
+
+Run: Get-Content .\cps\editbooks.py | Select-Object -Skip 840 -First 70
+
+We’ll determine whether the second caller is another privileged editing path or whether it changes our read-status hypothesis
+
+
+
+This confirms the second editbooks.py caller is also a privileged editing path.
+
+The relevant route is:
+
+@editbook.route("/ajax/readselectedbooks", methods=['POST'])
+
+@user_login_required
+
+@edit_required
+
+def read_selected_books():
+
+It then accepts multiple book IDs and calls:
+
+helper.edit_book_read_status(book_id, markAsRead)
+
+So far, our static trace looks like this:
+
+
+
+The important point remains: the ordinary /ajax/toggleread/<book_id> route is the strongest candidate, because any authenticated user can reach the helper without an additional edit-role requirement being visible in the route.
+
+We still do not have a confirmed vulnerability.
+
+inspect the helper itself again
+
+Now we need the complete function to determine exactly what happens to the supplied book_id.
+
+Run: Get-Content .\cps\helper.py | Select-Object -Skip 900 -First 95
+
+We're specifically looking for:
+
+book_id → book lookup/visibility validation → current_user.id → database query/create/update → commit
+
+
+
+This gives us enough evidence to make our first Lab 4 static-analysis assessment.
+
+What the helper confirms
+
+In the default configuration:
+
+if not config.config_read_column:
+
+the function searches only for:
+
+ub.ReadBook.user_id == int(current_user.id)
+
+ub.ReadBook.book_id == book_id
+
+If no record exists, it creates one directly:
+
+read_book = ub.ReadBook(
+    user_id=current_user.id,
+    book_id=book_id
+)
+
+We do not see get_filtered_book() or another book-visibility/access check before that database operation.
+
+But look at the custom-column branch:
+
+book = calibre_db.get_filtered_book(book_id, True)
+
+So we have confirmed the inconsistency we identified in Lab 3:
+
+Default read-status path: authenticated user + supplied book_id → user-bound state lookup/create → no explicit book-visibility check observed
+
+Custom-column path: supplied book_id → get_filtered_book() → filtered book → update
