@@ -230,7 +230,7 @@ Run: Get-Content .\cps\editbooks.py | Select-Object -Skip 840 -First 70
 
 We’ll determine whether the second caller is another privileged editing path or whether it changes our read-status hypothesis
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/8360ada72ef96c23df55d8d65451e1daa65ef858/Screenshot%202026-09-08%20135023.png)
 
 This confirms the second editbooks.py caller is also a privileged editing path.
 
