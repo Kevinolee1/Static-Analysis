@@ -590,7 +590,7 @@ is_archived
 
 The key question is whether the database independently requires book_id to correspond to a valid book
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a0754b115195e87c814cc8f51a6e3fb685e4170e/Screenshot%202026-09-08%20143707.png)
 
 This confirms the archive-status hypothesis survives static analysis too. 
 
