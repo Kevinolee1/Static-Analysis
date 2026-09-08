@@ -59,6 +59,8 @@ Then verify CodeQL: codeql version
 
 Go back into the target: cd .\targets\Calibre-Web-NextGen
 
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/12aeb3459ebbf6ae7c33b123f8f454d974296fca/Screenshot%202026-09-08%20113656.png))
+
 Now find everywhere edit_book_read_status() is called: Select-String -Path .\cps\*.py -Pattern "edit_book_read_status\(" | Select-Object Path, LineNumber, Line
 
 We're trying to determine:
