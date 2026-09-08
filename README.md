@@ -319,7 +319,7 @@ Before carrying this into dynamic testing, we need to examine ReadBook and its d
 
 Run: Select-String -Path .\cps\ub.py -Pattern "class ReadBook" | Select-Object LineNumber, Line
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0094d10bc105ce43f9183861082a21c3d73b72de/Screenshot%202026-09-08%20140712.png)
 
 The screenshot above ^ confirms:
 
