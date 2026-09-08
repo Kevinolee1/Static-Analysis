@@ -300,3 +300,327 @@ So we have confirmed the inconsistency we identified in Lab 3:
 Default read-status path: authenticated user + supplied book_id → user-bound state lookup/create → no explicit book-visibility check observed
 
 Custom-column path: supplied book_id → get_filtered_book() → filtered book → update
+
+**finding status**
+
+Static-analysis candidate: SURVIVES 
+
+This does not mean we have discovered an IDOR/BOLA.
+
+What we've established is narrower and defensible:
+
+The default read-status path accepts a user-controlled book ID and can create or modify user-specific ReadBook and KoboReadingState records without an explicit book-visibility check observed in the traced path. The alternate custom-column implementation does perform a filtered book lookup.
+
+That's a good vulnerability-research lead.
+
+Next — check whether another layer invalidates our hypothesis
+
+Before carrying this into dynamic testing, we need to examine ReadBook and its database relationships. A foreign-key constraint or model behavior could prevent nonexistent/unauthorized book IDs from producing a meaningful security impact.
+
+Run: Select-String -Path .\cps\ub.py -Pattern "class ReadBook" | Select-Object LineNumber, Line
+
+
+
+The screenshot above ^ confirms:
+
+Line 713: class ReadBook(Base):
+
+Now we need to inspect the model and determine what database constraints exist on book_id.
+
+Inspect ReadBook
+
+Run: Get-Content .\cps\ub.py | Select-Object -Skip 705 -First 75
+
+We're specifically looking for:
+
+ReadBook
+
+   ↓
+   
+user_id
+
+   ↓
+   
+book_id
+
+   ↓
+   
+ForeignKey?
+
+   ↓
+   
+Unique constraint?
+
+   ↓
+   
+Relationships / validation
+
+This matters because we want to determine whether the database itself prevents the suspicious read-status path from operating on an inappropriate book_id.
+
+
+
+This is an important result. The database model does not eliminate our hypothesis.
+
+In ReadBook, the fields are:
+
+book_id = Column(Integer, unique=False)
+
+user_id = Column(Integer, ForeignKey('user.id'), unique=False)
+
+The critical detail is that book_id is not a foreign key. The database enforces that user_id references a real user, but it does not enforce that book_id references a valid or visible book.
+
+The model does enforce:
+
+UniqueConstraint(
+    'user_id',
+    
+    'book_id',
+    
+    name='uq_book_read_link_user_book'
+)
+
+That prevents duplicate read-status rows for the same user/book pair, but it does not provide object-level authorization.
+
+Current static-analysis assessment
+
+Our read-status candidate becomes stronger:
+
+Authenticated request → user-controlled book_id → no explicit visibility check → ReadBook lookup/create → no database FK on book_id
+
+So this possible false-positive explanation has now been eliminated:
+
+“Maybe the database rejects unauthorized or invalid book IDs automatically.”
+
+It does not appear to.
+
+We still should not call this an IDOR/BOLA vulnerability yet. We haven't proven security impact or actual runtime behavior with a book the user cannot access.
+
+Inspect KoboReadingState
+
+The same helper also creates:
+
+ub.KoboReadingState(
+
+    user_id=current_user.id,
+    
+    book_id=book_id
+)
+
+Let's see whether that model adds any additional constraint.
+
+Run: Select-String -Path .\cps\ub.py -Pattern "class KoboReadingState" | Select-Object LineNumber, Line
+
+
+
+We found the model at:
+
+Line 1188: class KoboReadingState(Base):
+
+Now let's inspect the class and see whether book_id has a foreign-key or other constraint that could stop the operation.
+
+Run: Get-Content .\cps\ub.py | Select-Object -Skip 1180 -First 85
+
+We're looking specifically for:
+
+book_id → ForeignKey? → user_id → uniqueness constraints → relationships
+
+
+
+This confirms the same pattern in KoboReadingState.
+
+The model has:
+
+user_id = Column(Integer, ForeignKey('user.id'))
+
+book_id = Column(Integer)
+
+and only enforces uniqueness with:
+
+UniqueConstraint('user_id', 'book_id', name='uq_kobo_reading_state_user_book')
+
+So again, book_id is not protected by a database foreign key or visibility rule.
+
+Read-status static-analysis conclusion
+
+At this point, the Lab 3 hypothesis survives static analysis:
+
+Authenticated user
+→ supplies book_id
+
+→ /ajax/toggleread/<book_id>
+
+→ edit_book_read_status(book_id)
+
+→ no explicit get_filtered_book() in the default branch
+
+→ ReadBook / KoboReadingState rows can be created for that book_id
+
+→ database does not independently validate that the book is visible or even represented by a foreign key.
+
+That is enough to classify this as a:
+
+Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING 
+
+Still not a confirmed vulnerability, because we have not yet demonstrated that a user can affect or learn anything about a book they should not access.
+
+Move to the archive-status hypothesis
+
+Run:Select-String -Path .\cps\*.py -Pattern "change_archived_books\(" | Select-Object Path, LineNumber, Line
+
+
+
+The most important one to start with is web.py line 355, because we already saw that it is reachable by an ordinary authenticated user:
+
+@web.route("/ajax/togglearchived/<int:book_id>", methods=['POST'])
+
+@user_login_required
+
+def toggle_archived(book_id):
+
+    change_archived_books(book_id, ...)
+
+Just like our read-status candidate, the route itself didn't show an object-visibility check.
+
+Inspect the archive helper
+
+Now run:Get-Content .\cps\kobo_sync_status.py | Select-Object -Skip 460 -First 75
+
+We're looking for the complete:
+
+book_id
+
+   ↓
+   
+change_archived_books()
+
+   ↓
+   
+current_user.id
+
+   ↓
+   
+Book visibility check?
+
+   ↓
+   
+ArchivedBook lookup/create
+
+   ↓
+   
+Database write
+
+This will tell us whether the archive-status hypothesis survives deeper static analysis the way the read-status hypothesis did.
+
+
+
+This confirms that our archive-status hypothesis also survives this part of static analysis. 
+
+The important section is:
+
+archived_book = s.query(ub.ArchivedBook).filter(
+
+    and_(
+    
+        ub.ArchivedBook.user_id == int(current_user.id),
+        
+        ub.ArchivedBook.book_id == book_id
+    )
+).first()
+
+If no record exists, the application creates one directly:
+
+archived_book = ub.ArchivedBook(
+
+    user_id=current_user.id,
+    
+    book_id=book_id
+)
+
+There is no explicit get_filtered_book() or equivalent book-visibility check inside this helper.
+
+So the path we've traced is:
+
+Authenticated user → user-controlled book_id → change_archived_books() → current-user binding → no explicit book visibility check → ArchivedBook lookup/create → database commit
+
+Again, binding the row to current_user.id prevents directly modifying another user's archive row, but that's different from checking whether the current user is authorized to reference the supplied book.
+
+inspect the ArchivedBook database model
+
+Just as we did with ReadBook, we need to determine whether the database itself constrains book_id.
+
+If book_id also lacks an appropriate constraint, we'll continue false-positive elimination before deciding whether this candidate advances to later dynamic validation.
+
+Run: Select-String -Path .\cps\ub.py -Pattern "class ArchivedBook" | Select-Object LineNumber, Line
+
+The above ^ screenshot confirms:
+
+Line 796: class ArchivedBook(Base):
+
+Now we need to inspect that model to see whether book_id has a database constraint.
+
+Continue the archive-status analysis
+
+Run: Get-Content .\cps\ub.py | Select-Object -Skip 790 -First 55
+
+We're specifically looking for:
+
+ArchivedBook
+
+   ↓
+   
+user_id → ForeignKey?
+
+   ↓
+   
+book_id → ForeignKey?
+
+   ↓
+   
+Unique constraint?
+
+   ↓
+   
+is_archived
+
+The key question is whether the database independently requires book_id to correspond to a valid book
+
+
+
+This confirms the archive-status hypothesis survives static analysis too. 
+
+The model shows:
+
+user_id = Column(Integer, ForeignKey('user.id'))
+
+book_id = Column(Integer)
+
+and:
+
+UniqueConstraint(
+
+    'user_id',
+    
+    'book_id',
+    
+    name='uq_archived_book_user_book'
+)
+
+So the database ensures the user exists and prevents duplicate (user_id, book_id) rows, but book_id is not a foreign key and there is no object-visibility enforcement at the model layer.
+
+That gives us this static path:
+
+Authenticated user → user-controlled book_id → change_archived_books() → current-user binding → no explicit visibility check → ArchivedBook row creation/update → database commit
+
+Archive-status static-analysis conclusion
+
+Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING 
+
+This is still not a confirmed IDOR/BOLA. What we have proven is that the helper and model do not visibly enforce book-level authorization. We still need runtime testing later to determine whether a user can actually affect state for a book they should not be able to access.
+
+At this point, both of our object-authorization hypotheses have survived static review:
+
+Read-status candidate 
+
+Archive-status candidate 
+
+Next, we should move to the OAuth/OIDC account-matching hypothesis and trace how username, email, sub, and provider identity are used when mapping an external identity to a local account.
