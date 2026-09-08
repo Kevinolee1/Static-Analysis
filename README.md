@@ -15,6 +15,8 @@ git status
 
 And confirm the application version: Get-Content .\VERSION
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/dfeada499bfacbf1ba3576a804d247fcfa39802b/Screenshot%202026-09-08%20010019.png)
+
 Commit:
 7e9221f455329bb3e6611b4652ac23b7f8629bb0
 
