@@ -250,7 +250,7 @@ helper.edit_book_read_status(book_id, markAsRead)
 
 So far, our static trace looks like this:
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/67bcce35ce360c8ccbf408a94b1e7ef140d5e4da/Screenshot%202026-09-08%20135342.png)
 
 The important point remains: the ordinary /ajax/toggleread/<book_id> route is the strongest candidate, because any authenticated user can reach the helper without an additional edit-role requirement being visible in the route.
 
