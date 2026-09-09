@@ -1254,7 +1254,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\shelf.py | Select-Object -Ski
 
 We’ll check whether those redirects pass through a same-origin validation helper before we decide whether this is another false positive or a real candidate.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ad383a3fc98ee08da544af26d4c2c63424fe4317/Screenshot%202026-09-09%20105135.png)
 
 This one is more interesting than the search.py result.
 
