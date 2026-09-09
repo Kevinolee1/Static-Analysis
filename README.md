@@ -1514,7 +1514,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "after_
 
 If global response handling already adds nosniff or a restrictive CSP, this Semgrep finding may drop substantially in priority. If it doesn't, we'll keep the TXT-serving path for controlled Lab 5 testing.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/22f17fc4c03f0c11fadcecfd16349934eebf1c9f/Screenshot%202026-09-09%20123808.png)
 
 This changes Finding 4 significantly.
 
