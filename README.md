@@ -1300,3 +1300,265 @@ So any practical impact would likely require an authenticated user and a request
 
 **Check for an existing redirect-safety helper**
 
+You already have a cps\redirect.py file that looked like it contains host comparison logic. Before promoting this candidate, we should see whether shelf.py imports or uses that helper anywhere.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\shelf.py -Pattern "redirect.py|is_safe|safe_redirect|redirect_back|redirect\(" | Select-Object LineNumber, Line
+
+If there is no safety helper around these HTTP_REFERER redirects, this finding will stay on our shortlist for
+
+
+
+This confirms something important: in shelf.py, the HTTP_REFERER redirects shown are direct calls to redirect(). Your search did not reveal an is_safe, safe_redirect, or similar validation helper around them.
+
+There are several occurrences, including lines 188, 359, 375, 394, 405, 412, 487, 573, and 586.
+
+Semgrep Finding 3 — Static conclusion
+
+Potential open redirect through HTTP_REFERER
+
+Status: VALID FOR LATER DYNAMIC TESTING 🟠
+
+Our current trace is:
+
+Authenticated request
+
+        ↓
+        
+Client-controlled Referer header
+
+        ↓
+        
+request.environ["HTTP_REFERER"]
+
+        ↓
+        
+No visible same-origin validation
+
+        ↓
+        
+Flask redirect()
+
+        ↓
+        
+Potential external URL
+
+That is stronger than the search.py false positive. But we still do not call it a confirmed open-redirect vulnerability until we reproduce it in the authorized local instance and determine practical impact.
+
+For your Lab 4 notes:
+
+Semgrep identified multiple redirects in shelf.py that use the HTTP Referer header as the redirect destination. Manual source review found no visible same-origin or safe-redirect validation around these calls. Because the route requires authentication and some redirects depend on specific application states, the finding remains a static-analysis candidate pending controlled local validation.
+
+Next Semgrep finding
+
+Before dynamic testing, let's continue triaging the Semgrep results.
+
+We saw an XSS warning involving:
+
+return make_response(text_data)
+
+Let's trace that next.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 2580 -First 70
+
+We're going to determine exactly where text_data comes from and what content type is returned before deciding whether Semgrep found an actual XSS candidate.
+
+
+
+This gives us enough to classify the Semgrep XSS warning more precisely.
+
+Semgrep Finding 4 — make_response(text_data)
+
+The important path is:
+
+Authenticated/authorized viewer
+
+        ↓
+        
+Requests a TXT book
+
+        ↓
+        
+Application reads the TXT file
+
+        ↓
+        
+Detects/decodes its encoding
+
+        ↓
+        
+    text_data
+
+        ↓
+        
+make_response(text_data)
+
+The concern is that unlike the later general file-serving response, this TXT branch does not visibly set:
+
+Content-Type
+X-Content-Type-Options: nosniff
+Content-Security-Policy
+Content-Disposition
+
+Meanwhile, immediately afterward the general response explicitly adds:
+
+response.headers['Content-Disposition'] = 'inline'
+
+response.headers['X-Content-Type-Options'] = 'nosniff'
+
+response.headers['Content-Security-Policy'] = "script-src 'none'; object-src 'none'"
+
+That difference is worth investigating.
+
+However, we cannot call this XSS yet. make_response() may assign a safe MIME type based on the response data, and we also need to determine whether potentially attacker-controlled TXT content can reach this branch.
+
+Current classification
+
+Potential stored/content-sniffing XSS through TXT book serving
+
+Status: STATIC CANDIDATE 🟠 — needs more source tracing
+
+The next question is whether TXT uploads are permitted and how their MIME/extension validation works.
+
+Run this: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "TXT|txt|ALLOWED_EXTENSIONS|allowed_file|allowed_extension" | Select-Object Path, LineNumber, Line
+
+Then we'll determine whether a user can introduce a crafted .txt file into the library and whether this candidate deserves Lab 5 dynamic testing.
+
+
+
+this strengthens the TXT candidate enough to keep investigating.
+
+Your search confirms that TXT is explicitly included in EXTENSIONS_UPLOAD in constants.py, and the upload paths in editbooks.py perform extension/MIME validation. So TXT content can legitimately enter the application through its upload functionality, subject to permissions and configuration.
+
+We now need to inspect exactly what the MIME validation does. That will tell us whether it validates only that the file is a legitimate text file or provides some protection against HTML/script content.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\file_helper.py | Select-Object -Skip 45 -First 45
+
+Current Finding 4 status: 🟠 Static candidate
+
+We have not demonstrated XSS. So far we've established:
+
+TXT is an allowed upload format
+
+        ↓
+        
+Upload code performs MIME/extension validation
+
+        ↓
+        
+TXT can later reach serve_book()
+
+        ↓
+        
+TXT bytes become text_data
+
+        ↓
+        
+make_response(text_data)
+
+        ↓
+        
+No explicit security headers visible in this branch
+
+        ↓
+        
+Need to inspect MIME validation + resulting HTTP response
+
+If the validation still permits ordinary TXT containing HTML-like markup—which may be perfectly valid for a text file—the decisive question will eventually be what Content-Type and browser protections the TXT response actually receives in our local lab.
+
+
+
+This tells us the upload validation is primarily checking whether the detected MIME type matches one of the permitted formats. It does not sanitize the contents of a TXT file.
+
+That alone isn't a vulnerability—TXT files are expected to contain arbitrary text. The security question is how that content is served to the browser.
+
+Finding 4 — What we've established
+Uploaded file
+
+   ↓
+   
+Extension must be allowed
+
+   ↓
+   
+libmagic detects MIME type
+
+   ↓
+   
+MIME must match an allowed type
+
+   ↓
+   
+TXT stored in library
+
+   ↓
+   
+serve_book() reads raw TXT
+
+   ↓
+   
+text_data
+
+   ↓
+   
+make_response(text_data)
+
+   ↓
+   
+No explicit Content-Type / nosniff / CSP in this branch
+
+So Finding 4 remains 🟠 Static Candidate. We still should not label it XSS.
+
+There's one more static check I want before saving this for Lab 5: determine whether the application sets security headers globally. A global after_request handler or middleware could completely change our conclusion.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "after_request|X-Content-Type-Options|Content-Security-Policy|nosniff" | Select-Object Path, LineNumber, Line
+
+If global response handling already adds nosniff or a restrictive CSP, this Semgrep finding may drop substantially in priority. If it doesn't, we'll keep the TXT-serving path for controlled Lab 5 testing.
+
+
+
+This changes Finding 4 significantly.
+
+Your output shows an app-wide after_request hook in web.py, and lines 175–176 appear to apply:
+
+resp.headers['Content-Security-Policy'] = csp
+
+resp.headers['X-Content-Type-Options'] = 'nosniff'
+
+That means the security headers we thought were missing from the TXT-specific branch may actually be applied globally before the response reaches the browser.
+
+Finding 4 — likely false positive
+
+Potential XSS through make_response(text_data)
+
+Status: 🟡 Likely False Positive — one final static check
+
+We should inspect that global hook before closing it because the exact CSP and any conditional logic matter.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 150 -First 40
+
+If it confirms that nosniff and the CSP apply to the TXT response without an exception, we'll likely classify this Semgrep finding as false positive / mitigated by global response controls and move to the next Semgrep finding.
+
+
+
+That confirms the mitigation.
+
+The app-wide response hook applies both:
+
+resp.headers['Content-Security-Policy'] = csp
+resp.headers['X-Content-Type-Options'] = 'nosniff'
+
+and also adds:
+
+resp.headers['X-Frame-Options'] = 'SAMEORIGIN'
+
+resp.headers['X-XSS-Protection'] = '1; mode=block'
+
+For the TXT-serving path, the most important control is X-Content-Type-Options: nosniff. That prevents the browser from reinterpreting a plain-text response as HTML based on its contents. The CSP adds another layer of protection.
+
+Semgrep Finding 4 — Final classification
+
+Potential XSS via make_response(text_data)
+
+Status: False Positive / Mitigated 
+
+Semgrep flagged the TXT book-serving response as a potential XSS risk because raw file content reaches make_response(). Manual review confirmed that TXT is an allowed upload type and that the response branch does not set security headers locally. However, an application-wide after_request hook applies X-Content-Type-Options: nosniff and a restrictive Content Security Policy to responses. These controls substantially mitigate browser content-sniffing and script execution, so the finding was classified as a false positive/mitigated condition.
