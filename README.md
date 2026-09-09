@@ -939,6 +939,8 @@ the LDAP hypothesis survives static analysis.
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/fd992a0efd7adbe6df94d4dd5acfb178140f9c84/Screenshot%202026-09-09%20092038.png)
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/104aea72f627d27637df0d692eebb5dc52aab075/Screenshot%202026-09-09%20092339.png)
+
 Your output confirms two different fallback behaviors:
 
 elif login_result is None ...
