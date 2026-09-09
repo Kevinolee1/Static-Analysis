@@ -1362,7 +1362,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 
 
 We're going to determine exactly where text_data comes from and what content type is returned before deciding whether Semgrep found an actual XSS candidate.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/152d65ac76f8a0b4b616dc2f316efa19573d4015/Screenshot%202026-09-09%20122718.png)
 
 This gives us enough to classify the Semgrep XSS warning more precisely.
 
