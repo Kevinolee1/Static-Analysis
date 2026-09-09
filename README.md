@@ -1144,7 +1144,7 @@ Semgrep Host Header candidate: NEEDS DOCUMENTATION REVIEW 🟡
 
 The candidate is still technically interesting, but the presence of explicit deployment guidance makes it more likely this could be a deployment-hardening issue or false positive rather than a product vulnerability.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0c02256a5558e36cd7f2972a25308a3c939e2199/Screenshot%202026-09-09%20103903.png)
 
 This documentation materially lowers the likelihood that the Semgrep result is a product vulnerability.
 
