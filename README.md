@@ -793,7 +793,7 @@ Then send me the line number.
 
 We’ll inspect that function next to verify whether it logs in strictly through the newly created provider + sub binding or performs another ownership check.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/82feff64c79ff346994723b9bdc544ff26d48a6e/Screenshot%202026-09-09%20084244.png)
 
 The function begins at:
 
