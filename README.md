@@ -1094,7 +1094,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "ProxyF
 
 We’re specifically checking whether the application has a trusted-host or proxy configuration that neutralizes the Semgrep warning. If it does, this may be a false positive. If it does not, this candidate gets more interesting.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1b5bdacd263642ea26e819459d4de44d941f75de/Screenshot%202026-09-09%20103355.png)
 
 This output shows the application does use ProxyFix, including support for X-Forwarded-Host, so the Semgrep result cannot be dismissed yet.
 
