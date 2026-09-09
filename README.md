@@ -734,7 +734,6 @@ Your pasted output ends around the existing-user role-management logic. Before d
 
 Run: Get-Content .\cps\oauth_bb.py | Select-Object -Skip 500 -First 120
 
-
 We're specifically looking for:
 
 existing local user → existing OAuth binding lookup → provider → sub → binding creation/update → login
