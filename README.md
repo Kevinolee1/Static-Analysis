@@ -1126,6 +1126,7 @@ We have confirmed the app generates a security-sensitive remote-login URL using 
 
 Search the repository documentation for the proxy configuration: Get-ChildItem .\targets\Calibre-Web-NextGen -Recurse -File -Include *.md,*.txt,*.yml,*.yaml | Select-String -Pattern "TRUSTED_PROXY_COUNT|PROXYFIX_X_HOST|X-Forwarded-Host" | Select-Object Path, LineNumber, Line
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/d294181d4bd90b333b39c43c44184e21e19cd4a6/Screenshot%202026-09-09%20103355.png)
 
 That changes the assessment in an important way: the proxy behavior is documented, including TRUSTED_PROXY_COUNT and separate PROXYFIX_X_HOST configuration. So we should not frame this as an obvious unsafe default without reading that documentation context first.
 
