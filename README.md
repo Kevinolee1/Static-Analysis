@@ -632,3 +632,264 @@ Read-status candidate
 Archive-status candidate 
 
 Next, we should move to the OAuth/OIDC account-matching hypothesis and trace how username, email, sub, and provider identity are used when mapping an external identity to a local account.
+
+**Static Analysis Target: OAuth/OIDC**
+
+Our question is:
+
+Can an external OIDC identity become associated with an existing local account based on username/email matching before the provider sub is fully bound?
+
+We are still doing source review only.
+
+Start by locating the main registration/mapping function: Select-String -Path .\cps\oauth_bb.py -Pattern "def register_user_from_generic_oauth" | Select-Object LineNumber, Line
+
+Then inspect the function: Get-Content .\cps\oauth_bb.py | Select-Object -Skip 320 -First 190
+
+We’re looking for this flow:
+
+OIDC userinfo
+
+   ↓
+   
+username / email / sub
+
+   ↓
+   
+existing local user lookup
+
+   ↓
+   
+group checks
+
+   ↓
+   
+account creation or account match
+
+   ↓
+   
+provider + sub binding
+
+Your output gives us the key part of the OAuth/OIDC path. The hypothesis still deserves investigation, but we need the remainder of the function before making the final static-analysis decision.
+
+The important sequence is:
+
+OIDC userinfo
+
+     ↓
+     
+preferred_username
+
+email
+
+sub
+
+     ↓
+     
+Require username + sub
+
+     ↓
+     
+Search existing local account by username
+
+     ↓
+     
+If none, search by email
+
+     ↓
+     
+Group authorization
+
+     ↓
+     
+Existing account OR create new account
+
+     ↓
+     
+OAuth identity binding
+
+The code explicitly requires both provider_username and provider_user_id (sub).
+
+But for a normal login, it then attempts to locate an existing local account first by:
+
+ub.User.name == provider_username
+
+and, if that fails, by:
+
+ub.User.email == provider_email
+
+before the portion we've seen establishes how the provider identity is bound.
+
+That's the exact behavior our Lab 3 hypothesis predicted.
+
+There are also meaningful controls: required-group authorization happens before account creation/login, and administrator assignment is gated by both the IdP group and the application's group-management configuration.
+
+We need the rest of the function
+
+Your pasted output ends around the existing-user role-management logic. Before deciding whether account matching presents a real candidate, we need to see how provider_user_id (sub) is subsequently associated with the local user.
+
+Run: Get-Content .\cps\oauth_bb.py | Select-Object -Skip 500 -First 120
+
+
+We're specifically looking for:
+
+existing local user → existing OAuth binding lookup → provider → sub → binding creation/update → login
+
+
+
+This strengthens the OAuth/OIDC hypothesis.
+
+The key sequence is now clear:
+
+OIDC username/email/sub
+
+        ↓
+        
+Existing local user matched by username
+
+        ↓
+        
+Fallback match by email
+
+        ↓
+        
+OAuth lookup by provider + sub
+
+        ↓
+        
+If no OAuth entry exists, create one
+
+        ↓
+        
+oauth.user = matched local user
+        ↓
+        
+      Commit
+
+        ↓
+        
+Login through bind_oauth_or_register()
+
+The important line is:
+
+oauth.user = user
+
+Because user may have been selected earlier solely by matching the external provider_username or provider_email. The OAuth record itself is correctly keyed by both provider and sub, but that happens after the local-account match.
+
+So our static-analysis question becomes very specific:
+
+Can a new external identity with a matching username or email cause its provider sub to become permanently bound to an existing local account without an additional ownership-verification step?
+
+That is a meaningful authentication candidate, but it is still not a confirmed account-takeover vulnerability. Whether it's exploitable depends on assumptions such as how the IdP guarantees usernames/emails, whether email is verified, and whether the application intentionally supports automatic account linking
+
+**Inspect the final login function**
+
+Run: Select-String -Path .\cps\oauth_bb.py -Pattern "def bind_oauth_or_register" | Select-Object LineNumber, Line
+
+Then send me the line number.
+
+We’ll inspect that function next to verify whether it logs in strictly through the newly created provider + sub binding or performs another ownership check.
+
+
+
+The function begins at:
+
+Line 631: def bind_oauth_or_register(provider_id, provider_user_id, redirect_url, provider_name):
+
+This is the final piece we need to trace for the OAuth/OIDC hypothesis.
+
+Run: Get-Content .\cps\oauth_bb.py | Select-Object -Skip 625 -First 90
+
+We're looking for:
+
+provider + sub
+
+     ↓
+     
+OAuth record lookup
+
+     ↓
+     
+Associated local user
+
+     ↓
+     
+Any additional identity/ownership check?
+
+     ↓
+     
+login_user()
+
+If this function simply retrieves the OAuth record we just created and authenticates its associated local user, that would further strengthen the static-analysis candidate.
+
+We still won't classify this as an account-takeover vulnerability until the complete authentication chain and intended account-linking behavior are established.
+
+
+
+
+This completes the key OAuth/OIDC call chain, and the OAuth account-matching hypothesis survives static analysis. ✅
+
+The login function looks up the OAuth record using:
+
+provider=provider_id
+provider_user_id=provider_user_id
+
+and then, if that record is associated with a user, it directly authenticates that local account:
+
+if oauth_entry and oauth_entry.user:
+    login_user(oauth_entry.user)
+
+There is an important protection against linking the same OAuth identity to a different already-authenticated user, but that check occurs after the OAuth record already has an associated local user.
+
+So the static flow we have now traced is:
+
+OIDC userinfo
+
+   ↓
+   
+username + email + sub
+
+   ↓
+   
+Existing local user matched by username
+or fallback to email
+
+   ↓
+   
+OAuth record looked up/created using provider + sub
+
+   ↓
+   
+oauth.user = matched local user
+
+   ↓
+   
+Commit
+
+   ↓
+   
+bind_oauth_or_register()
+
+   ↓
+   
+OAuth record found by provider + sub
+
+   ↓
+   
+login_user(oauth_entry.user)
+OAuth/OIDC static-analysis conclusion
+
+Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING ✅
+
+The specific question for later validation is:
+
+Can a newly authenticated external OIDC identity become bound to an existing local account solely because its provider username or email matches that local account, without an additional ownership-verification step?
+
+We still should not call this account takeover. Exploitability depends on the IdP's guarantees around usernames, email verification, uniqueness, and the application's intended automatic account-linking behavior.
+
+So far, Lab 4 has three surviving candidates:
+
+Read-status object authorization 
+Archive-status object authorization 
+OAuth/OIDC account matching 
+
+Next, we should move to the LDAP local-password fallback hypothesis.
