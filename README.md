@@ -1055,6 +1055,9 @@ Semgrep Investigation 1 — Remote Login URL Generation
 
 Run this from your project root: Select-String -Path .\targets\Calibre-Web-NextGen\cps\api\auth.py -Pattern "_external=True" -Context 15,15
 
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/584fb4171e4333819c2be6d938b26cd37aec0220/Screenshot%202026-09-09%20101610.png)
+
 This gives us the surrounding code so we can answer:
 
 Request input → Host handling → url_for() → verification URL → security impact?
