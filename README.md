@@ -828,9 +828,9 @@ If this function simply retrieves the OAuth record we just created and authentic
 We still won't classify this as an account-takeover vulnerability until the complete authentication chain and intended account-linking behavior are established.
 
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/51a56022c8763b26f975d11efe6f1f85c6f26c8b/Screenshot%202026-09-09%20084629.png)
 
-
-This completes the key OAuth/OIDC call chain, and the OAuth account-matching hypothesis survives static analysis. ✅
+This completes the key OAuth/OIDC call chain, and the OAuth account-matching hypothesis survives static analysis. 
 
 The login function looks up the OAuth record using:
 
@@ -882,7 +882,7 @@ OAuth record found by provider + sub
 login_user(oauth_entry.user)
 OAuth/OIDC static-analysis conclusion
 
-Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING ✅
+Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING 
 
 The specific question for later validation is:
 
