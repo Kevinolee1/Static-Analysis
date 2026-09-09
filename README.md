@@ -35,8 +35,6 @@ Why we're doing this
 
 Static-analysis results only mean something if we can tie them to a specific version and commit. If the code changes later, we’ll still know exactly which source tree produced our findings.
 
-Take screenshots of the commands and outputs for your portfolio.
-
 **Verify Static Analysis Tools**
 
 First, return to your research-project root: cd C:\Users\eelve\Vulnerability-Research-Lab
@@ -513,10 +511,9 @@ ArchivedBook lookup/create
    
 Database write
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f6576470d4abfc581fb81b8d17d961fe0e50ae3e/Screenshot%202026-09-08%20143344.png)
-
 This will tell us whether the archive-status hypothesis survives deeper static analysis the way the read-status hypothesis did.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f6576470d4abfc581fb81b8d17d961fe0e50ae3e/Screenshot%202026-09-08%20143344.png)
 
 
 This confirms that our archive-status hypothesis also survives this part of static analysis. 
@@ -1055,7 +1052,6 @@ Semgrep Investigation 1 — Remote Login URL Generation
 
 Run this from your project root: Select-String -Path .\targets\Calibre-Web-NextGen\cps\api\auth.py -Pattern "_external=True" -Context 15,15
 
-
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/584fb4171e4333819c2be6d938b26cd37aec0220/Screenshot%202026-09-09%20101610.png)
 
 This gives us the surrounding code so we can answer:
@@ -1147,6 +1143,7 @@ The candidate is still technically interesting, but the presence of explicit dep
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0c02256a5558e36cd7f2972a25308a3c939e2199/Screenshot%202026-09-09%20103903.png)
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a67f47cf801c4a220088430e51bd302c5639bce6/Screenshot%202026-09-09%20103949.png)
+
 This documentation materially lowers the likelihood that the Semgrep result is a product vulnerability.
 
 The README explicitly says to “Count only proxies you control and that overwrite or sanitize the corresponding header.” That is exactly the security assumption ProxyFix depends on. It also documents that PROXYFIX_X_HOST can be tuned independently. Based on that, the maintainers are clearly treating forwarded-host trust as a deployment responsibility rather than blindly trusting arbitrary client headers.
@@ -1154,7 +1151,9 @@ The README explicitly says to “Count only proxies you control and that overwri
 Semgrep Finding 1 — Conclusion
 
 Host Header Injection via _external=True
+
 Status: likely false positive / configuration-dependent
+
 Do not promote to vulnerability candidate yet.
 
 What we have established is:
@@ -1171,11 +1170,9 @@ _external=True
 
 So the risky condition would mainly arise from misconfiguration, such as exposing the app directly while still trusting forwarded headers or using a proxy that does not sanitize them. That is not enough by itself to claim a product flaw.
 
-For your Lab 4 notes, I would write:
-
 Semgrep flagged external URL generation in the remote-login API as a potential Host-header injection risk. Manual review confirmed that the application uses ProxyFix with configurable forwarded-host trust. Project documentation explicitly instructs administrators to trust only controlled proxies that overwrite or sanitize forwarded headers. The finding is therefore currently classified as configuration-dependent and not a confirmed vulnerability.
 
-Semgrep finding
+**Semgrep finding**
 
 The next one I recommend we inspect is the open redirect finding in:
 
@@ -1196,9 +1193,13 @@ term = request.args.get("query")
 but that value is only inserted as the query parameter inside:
 
 url_for(
+
     'web.books_list',
+    
     data="search",
+    
     sort_param='stored',
+    
     query=term.strip()
 )
 
@@ -1395,8 +1396,11 @@ make_response(text_data)
 The concern is that unlike the later general file-serving response, this TXT branch does not visibly set:
 
 Content-Type
+
 X-Content-Type-Options: nosniff
+
 Content-Security-Policy
+
 Content-Disposition
 
 Meanwhile, immediately afterward the general response explicitly adds:
@@ -1472,6 +1476,7 @@ This tells us the upload validation is primarily checking whether the detected M
 That alone isn't a vulnerability—TXT files are expected to contain arbitrary text. The security question is how that content is served to the browser.
 
 Finding 4 — What we've established
+
 Uploaded file
 
    ↓
