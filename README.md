@@ -1306,7 +1306,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\shelf.py -Pattern "re
 
 If there is no safety helper around these HTTP_REFERER redirects, this finding will stay on our shortlist for
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/35d07b57522129232f4fdf7c280ad9ccc07d9719/Screenshot%202026-09-09%20122535.png)
 
 This confirms something important: in shelf.py, the HTTP_REFERER redirects shown are direct calls to redirect(). Your search did not reveal an is_safe, safe_redirect, or similar validation helper around them.
 
