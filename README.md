@@ -1538,13 +1538,14 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 
 
 If it confirms that nosniff and the CSP apply to the TXT response without an exception, we'll likely classify this Semgrep finding as false positive / mitigated by global response controls and move to the next Semgrep finding.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/44b60ffa604c7bbc1ed2eea116ccad292a94ab1a/Screenshot%202026-09-09%20124141.png)
 
 That confirms the mitigation.
 
 The app-wide response hook applies both:
 
 resp.headers['Content-Security-Policy'] = csp
+
 resp.headers['X-Content-Type-Options'] = 'nosniff'
 
 and also adds:
