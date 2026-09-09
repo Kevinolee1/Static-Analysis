@@ -1297,3 +1297,6 @@ There is another important point: the route is protected with:
 @user_login_required
 
 So any practical impact would likely require an authenticated user and a request that reaches one of these redirect branches. That affects severity but not whether the redirect behavior exists.
+
+**Check for an existing redirect-safety helper**
+
