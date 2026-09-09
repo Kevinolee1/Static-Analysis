@@ -1146,6 +1146,7 @@ The candidate is still technically interesting, but the presence of explicit dep
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0c02256a5558e36cd7f2972a25308a3c939e2199/Screenshot%202026-09-09%20103903.png)
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a67f47cf801c4a220088430e51bd302c5639bce6/Screenshot%202026-09-09%20103949.png)
 This documentation materially lowers the likelihood that the Semgrep result is a product vulnerability.
 
 The README explicitly says to “Count only proxies you control and that overwrite or sanitize the corresponding header.” That is exactly the security assumption ProxyFix depends on. It also documents that PROXYFIX_X_HOST can be tuned independently. Based on that, the maintainers are clearly treating forwarded-host trust as a deployment responsibility rather than blindly trusting arbitrary client headers.
