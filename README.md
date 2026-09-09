@@ -669,7 +669,10 @@ account creation or account match
    
 provider + sub binding
 
-Your output gives us the key part of the OAuth/OIDC path. The hypothesis still deserves investigation, but we need the remainder of the function before making the final static-analysis decision.
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f29a1127184b7ca7d7945c21d091e57d9ce8bffa/Screenshot%202026-09-09%20083039.png)
+
+This output gives us the key part of the OAuth/OIDC path. The hypothesis still deserves investigation, but we need the remainder of the function before making the final static-analysis decision.
 
 The important sequence is:
 
