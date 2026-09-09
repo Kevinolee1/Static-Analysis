@@ -1465,7 +1465,7 @@ Need to inspect MIME validation + resulting HTTP response
 
 If the validation still permits ordinary TXT containing HTML-like markup—which may be perfectly valid for a text file—the decisive question will eventually be what Content-Type and browser protections the TXT response actually receives in our local lab.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/8fa209cf2b41df8688763ef63c90760e12dc8d95/Screenshot%202026-09-09%20123435.png)
 
 This tells us the upload validation is primarily checking whether the detected MIME type matches one of the permitted formats. It does not sanitize the contents of a TXT file.
 
