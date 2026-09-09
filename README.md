@@ -738,7 +738,7 @@ We're specifically looking for:
 
 existing local user → existing OAuth binding lookup → provider → sub → binding creation/update → login
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ce8906630a50adf906036fe8bb86b95039ce2358/Screenshot%202026-09-09%20083814.png)
 
 This strengthens the OAuth/OIDC hypothesis.
 
