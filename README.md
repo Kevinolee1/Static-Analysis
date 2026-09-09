@@ -893,7 +893,9 @@ We still should not call this account takeover. Exploitability depends on the Id
 So far, Lab 4 has three surviving candidates:
 
 Read-status object authorization 
+
 Archive-status object authorization 
+
 OAuth/OIDC account matching 
 
 Next, we should move to the LDAP local-password fallback hypothesis.
@@ -934,6 +936,8 @@ Login  fallback?  local-password fallback?
 We’ll confirm whether the False branch really allows local-password authentication before deciding whether this LDAP hypothesis survives Lab 4 static analysis.
 
 the LDAP hypothesis survives static analysis. 
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/fd992a0efd7adbe6df94d4dd5acfb178140f9c84/Screenshot%202026-09-09%20092038.png)
 
 Your output confirms two different fallback behaviors:
 
