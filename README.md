@@ -1023,7 +1023,7 @@ SQL-related issues
 
 A Semgrep alert is only a potential finding. We will manually inspect anything interesting before it becomes a Lab 4 candidate.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0642487d33c668b0e4492c97024dd53ac25b4650/Screenshot%202026-09-09%20095950.png)
 
 
 The Semgrep scan completed successfully. It scanned 884 Git-tracked files with 459 rules and produced 141 findings. There were also several rule timeouts, so this was not perfect coverage.
