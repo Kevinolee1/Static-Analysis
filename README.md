@@ -1185,7 +1185,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\search.py | Select-Object -Fi
 
 We’ll trace whether user-controlled request.args can actually reach redirect() without same-origin validation.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/c09586e26730b791ef1d7d49289576bd980448d5/Screenshot%202026-09-09%20104605.png)
 
 This specific cps\search.py open-redirect finding looks like a false positive.
 
