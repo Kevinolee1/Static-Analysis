@@ -897,3 +897,389 @@ Archive-status object authorization
 OAuth/OIDC account matching 
 
 Next, we should move to the LDAP local-password fallback hypothesis.
+
+
+Now we’ll trace the LDAP local-password fallback hypothesis.
+
+Our question is:
+
+If LDAP explicitly rejects a user’s credentials, can Calibre-Web NextGen still authenticate that same account using its stored local password?
+
+We are still doing static analysis only.
+
+Run this first: Select-String -Path .\cps\web.py -Pattern "login_result is False|login_result is None|check_password_hash" | Select-Object LineNumber, Line
+
+Then inspect the surrounding LDAP login logic: Get-Content .\cps\web.py | Select-Object -Skip 3020 -First 105
+
+We’re looking for this decision flow:
+
+Username + Password
+
+      ↓
+      
+LDAP bind_user()
+
+      ↓
+      
+LDAP result
+
+  ┌────┼────┐
+  
+ True None False
+ 
+  ↓     ↓     ↓
+  
+Login  fallback?  local-password fallback?
+
+We’ll confirm whether the False branch really allows local-password authentication before deciding whether this LDAP hypothesis survives Lab 4 static analysis.
+
+the LDAP hypothesis survives static analysis. 
+
+Your output confirms two different fallback behaviors:
+
+elif login_result is None ...
+
+means LDAP unavailable / indeterminate and the app may use the stored local password.
+
+But this branch is more security-relevant:
+
+elif login_result is False and user and user.password \
+
+        and check_password_hash(str(user.password), form['password']) \
+        
+        and user.name != "Guest":
+
+That means LDAP explicitly rejected the credentials, yet the application can still authenticate the local account using its stored password.
+
+The flow is:
+
+Username + password → LDAP bind → LDAP returns False → local user exists → local password hash matches → handle_login_user()
+
+That is different from a normal availability fallback.
+
+Lab 4 LDAP conclusion
+
+Static-analysis candidate: VALID FOR LATER DYNAMIC TESTING 
+
+The precise question for later validation is:
+
+If an administrator expects LDAP to be authoritative and disables or revokes a user in LDAP, can that user still authenticate with a pre-existing local password?
+
+We still should not call this an authentication bypass yet because it may be intentional product behavior or documented fallback semantics.
+
+At this point, all four Lab 3 hypotheses have survived targeted static review:
+
+Read-status object authorization 
+
+Archive-status object authorization 
+
+OAuth/OIDC account matching 
+
+LDAP local-password fallback 
+
+The next logical part of Lab 4 is to begin Semgrep analysis and see whether it surfaces any additional security-sensitive patterns beyond these four manually traced candidates.
+
+**Semgrep Analysis**
+
+Return to the project root
+
+From the target repo, run: cd C:\Users\eelve\Vulnerability-Research-Lab
+
+Make sure the virtual environment is still active:
+
+(.venv) PS C:\Users\eelve\Vulnerability-Research-Lab>
+
+un the first Semgrep scan
+
+Run this against the local cps source directory: semgrep scan --config auto .\targets\Calibre-Web-NextGen\cps
+
+This will scan the local Python application using Semgrep’s automatically selected rule set.
+
+We are looking for categories such as:
+
+Authentication
+
+Authorization
+
+Unsafe input handling
+
+Path/file handling
+
+Injection patterns
+
+Dangerous subprocess usage
+
+Cryptographic misuse
+
+Potential XSS
+
+SQL-related issues
+
+A Semgrep alert is only a potential finding. We will manually inspect anything interesting before it becomes a Lab 4 candidate.
+
+
+
+
+The Semgrep scan completed successfully. It scanned 884 Git-tracked files with 459 rules and produced 141 findings. There were also several rule timeouts, so this was not perfect coverage.
+
+The important part now is triage. We are not calling these 141 vulnerabilities.
+
+One result is immediately worth investigating because it intersects with the remote-login trust boundary we already mapped:
+
+cps\api\auth.py
+
+flask-url-for-external-true
+
+verify_url = url_for(
+
+    "remotelogin.verify_token",
+    
+    token=auth_token.auth_token,
+    
+    _external=True
+    
+)
+
+Semgrep warns that _external=True can cause Flask to construct an absolute URL using request host information, potentially creating a Host-header injection condition.
+
+That does not mean Calibre-Web NextGen is vulnerable. We need to determine where that URL goes, whether the host is trusted/configured, and whether an attacker-controlled Host value could influence a security-sensitive remote-login link.
+
+Semgrep Investigation 1 — Remote Login URL Generation
+
+Run this from your project root: Select-String -Path .\targets\Calibre-Web-NextGen\cps\api\auth.py -Pattern "_external=True" -Context 15,15
+
+This gives us the surrounding code so we can answer:
+
+Request input → Host handling → url_for() → verification URL → security impact?
+
+We also have other findings to triage later, including Semgrep's SHA-1 warning and make_response() XSS warnings. For example, it flagged make_response(text_data), but that requires tracing where text_data originates before deciding whether XSS is possible.
+
+this finding is worth tracing further, but it is still only a candidate.
+
+What your output confirms is:
+
+Unauthenticated SPA request
+
+   ↓
+   
+RemoteAuthToken created
+
+   ↓
+   
+url_for(..., _external=True)
+
+   ↓
+   
+verify_url returned in JSON
+
+   ↓
+   
+same URL embedded into QR code
+
+The security-relevant point is that the absolute verify_url is generated server-side and then sent back to the client as both a URL and QR-code destination. If the application trusts an attacker-controlled Host header here, that could potentially cause the QR code or returned link to point to an attacker-controlled domain while still containing the real token.
+
+We still need to prove two things before this becomes a real vulnerability: whether Flask’s host generation is constrained by configuration/proxy handling, and whether the token in that generated URL is security-sensitive enough for host manipulation to matter.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "ProxyFix|TRUSTED_HOSTS|SERVER_NAME|host_url|request.host|X-Forwarded-Host" | Select-Object Path, LineNumber, Line
+
+We’re specifically checking whether the application has a trusted-host or proxy configuration that neutralizes the Semgrep warning. If it does, this may be a false positive. If it does not, this candidate gets more interesting.
+
+This output shows the application does use ProxyFix, including support for X-Forwarded-Host, so the Semgrep result cannot be dismissed yet.
+
+The key question now is how many proxy hops are trusted by default. If x_host is greater than 0, Flask may replace the request host using X-Forwarded-Host. If that header can be supplied directly by an untrusted client in a deployment, _external=True could generate a poisoned verification URL.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\__init__.py | Select-Object -Skip 95 -First 30
+
+We want to inspect this section:
+
+PROXYFIX_X_FOR
+
+PROXYFIX_X_PROTO
+
+PROXYFIX_X_HOST
+
+proxyfix_hops
+
+ProxyFix(...)
+
+Right now, the status is:
+
+Semgrep Host Header candidate — still under investigation 🟡
+
+We have confirmed the app generates a security-sensitive remote-login URL using _external=True, and we have confirmed ProxyFix can affect host handling. We have not yet proven attacker control over the generated host.
+
+
+
+**static-analysis step**
+
+Search the repository documentation for the proxy configuration: Get-ChildItem .\targets\Calibre-Web-NextGen -Recurse -File -Include *.md,*.txt,*.yml,*.yaml | Select-String -Pattern "TRUSTED_PROXY_COUNT|PROXYFIX_X_HOST|X-Forwarded-Host" | Select-Object Path, LineNumber, Line
+
+
+That changes the assessment in an important way: the proxy behavior is documented, including TRUSTED_PROXY_COUNT and separate PROXYFIX_X_HOST configuration. So we should not frame this as an obvious unsafe default without reading that documentation context first.
+
+The best next step is to inspect the README section around those lines, especially 521–534 and the later proxy guidance.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\README.md | Select-Object -Skip 515 -First 30
+
+Then also: Get-Content .\targets\Calibre-Web-NextGen\README.md | Select-Object -Skip 640 -First 65
+
+What we’re checking now is whether the maintainers explicitly warn users that forwarded-host trust must match the real proxy chain and that untrusted clients must not be allowed to supply those headers.
+
+Current status
+
+Semgrep Host Header candidate: NEEDS DOCUMENTATION REVIEW 🟡
+
+The candidate is still technically interesting, but the presence of explicit deployment guidance makes it more likely this could be a deployment-hardening issue or false positive rather than a product vulnerability.
+
+
+
+This documentation materially lowers the likelihood that the Semgrep result is a product vulnerability.
+
+The README explicitly says to “Count only proxies you control and that overwrite or sanitize the corresponding header.” That is exactly the security assumption ProxyFix depends on. It also documents that PROXYFIX_X_HOST can be tuned independently. Based on that, the maintainers are clearly treating forwarded-host trust as a deployment responsibility rather than blindly trusting arbitrary client headers.
+
+Semgrep Finding 1 — Conclusion
+
+Host Header Injection via _external=True
+Status: likely false positive / configuration-dependent
+Do not promote to vulnerability candidate yet.
+
+What we have established is:
+
+_external=True
+
+→ absolute verification URL
+
+→ ProxyFix can influence host
+
+→ x_host defaults to 1
+
+→ documentation explicitly requires trusted/sanitized proxies
+
+So the risky condition would mainly arise from misconfiguration, such as exposing the app directly while still trusting forwarded headers or using a proxy that does not sanitize them. That is not enough by itself to claim a product flaw.
+
+For your Lab 4 notes, I would write:
+
+Semgrep flagged external URL generation in the remote-login API as a potential Host-header injection risk. Manual review confirmed that the application uses ProxyFix with configurable forwarded-host trust. Project documentation explicitly instructs administrators to trust only controlled proxies that overwrite or sanitize forwarded headers. The finding is therefore currently classified as configuration-dependent and not a confirmed vulnerability.
+
+Semgrep finding
+
+The next one I recommend we inspect is the open redirect finding in:
+
+cps\search.py
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\search.py | Select-Object -First 90
+
+We’ll trace whether user-controlled request.args can actually reach redirect() without same-origin validation.
+
+
+
+This specific cps\search.py open-redirect finding looks like a false positive.
+
+The user controls:
+
+term = request.args.get("query")
+
+but that value is only inserted as the query parameter inside:
+
+url_for(
+    'web.books_list',
+    data="search",
+    sort_param='stored',
+    query=term.strip()
+)
+
+The redirect destination itself is a known internal Flask endpoint:
+
+web.books_list
+
+So the flow is:
+
+User-controlled search term
+
+        ↓
+        
+URL query parameter
+
+        ↓
+        
+url_for("web.books_list", ...)
+
+        ↓
+        
+Internal application URL
+
+        ↓
+        
+    redirect()
+
+An input such as:
+
+https://evil.example
+
+would become data inside the internal search URL rather than replacing the redirect destination.
+
+Semgrep Finding 2 — Conclusion
+
+Potential open redirect in search.py
+
+Status: False Positive 
+
+Semgrep flagged the search route as a potential open redirect because request-controlled data reaches redirect(). Manual source review showed that the destination is generated through Flask url_for() using a fixed internal endpoint. The user-controlled search term is passed only as a query parameter and does not control the redirect host or destination. The finding was therefore classified as a false positive.
+
+Next finding — more interesting
+
+Semgrep also found multiple redirects based directly on:
+
+request.environ["HTTP_REFERER"]
+
+inside cps\shelf.py.
+
+That is more worthy of review because Referer is request-controlled metadata and may contain an external URL.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\shelf.py | Select-Object -Skip 330 -First 105
+
+We’ll check whether those redirects pass through a same-origin validation helper before we decide whether this is another false positive or a real candidate.
+
+
+
+This one is more interesting than the search.py result.
+
+The route directly redirects to the raw HTTP_REFERER value in several places:
+
+return redirect(request.environ["HTTP_REFERER"])
+
+and also:
+
+return redirect(request.environ.get("HTTP_REFERER") or url_for('web.index'))
+
+The important difference is that this value is not being wrapped in url_for() or obviously passed through a same-origin validation helper in the code you showed.
+
+So the static flow is:
+
+Client-supplied Referer header
+
+        ↓
+        
+request.environ["HTTP_REFERER"]
+
+        ↓
+        
+redirect(...)
+
+        ↓
+        
+Potential external destination
+
+Semgrep Finding 3 — Current status
+
+Potential open redirect via HTTP_REFERER
+
+Status: Valid static candidate for local dynamic testing 🟠
+
+We still need to check whether Flask/Werkzeug normalizes this or whether another wrapper prevents external redirects. But from the source shown, I do not see a local validation check in these branches.
+
+There is another important point: the route is protected with:
+
+@user_login_required
+
+So any practical impact would likely require an authenticated user and a request that reaches one of these redirect branches. That affects severity but not whether the redirect behavior exists.
