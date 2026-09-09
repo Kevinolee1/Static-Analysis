@@ -1094,6 +1094,8 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "ProxyF
 
 We’re specifically checking whether the application has a trusted-host or proxy configuration that neutralizes the Semgrep warning. If it does, this may be a false positive. If it does not, this candidate gets more interesting.
 
+
+
 This output shows the application does use ProxyFix, including support for X-Forwarded-Host, so the Semgrep result cannot be dismissed yet.
 
 The key question now is how many proxy hops are trusted by default. If x_host is greater than 0, Flask may replace the request host using X-Forwarded-Host. If that header can be supplied directly by an untrusted client in a deployment, _external=True could generate a poisoned verification URL.
@@ -1118,7 +1120,7 @@ Semgrep Host Header candidate — still under investigation 🟡
 
 We have confirmed the app generates a security-sensitive remote-login URL using _external=True, and we have confirmed ProxyFix can affect host handling. We have not yet proven attacker control over the generated host.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1f7c4864290081e061ebc18e54b3250ee935aab1/Screenshot%202026-09-09%20102311.png)
 
 **static-analysis step**
 
