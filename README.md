@@ -1423,7 +1423,7 @@ Run this: Select-String -Path .\targets\Calibre-Web-NextGen\cps\*.py -Pattern "T
 
 Then we'll determine whether a user can introduce a crafted .txt file into the library and whether this candidate deserves Lab 5 dynamic testing.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/cb0bcc82724657b08901c8433754058e9d4b43bf/Screenshot%202026-09-09%20123159.png)
 
 this strengthens the TXT candidate enough to keep investigating.
 
