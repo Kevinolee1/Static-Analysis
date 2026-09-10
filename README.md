@@ -1575,4 +1575,626 @@ cps\api\i18n.py
 
 SHA1 findings are often harmless when used for caching, identifiers, or non-security checksums, but serious if used for password hashing, signatures, or security-sensitive integrity.
 
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\api\i18n.py | Select-Object -First 140
+
+We’ll determine exactly what SHA1 is being used for and classify it as either:
+
+false positive / non-security use,
+
+weak cryptographic practice,
+
+or a real security candidate.
+
+
+
+This SHA1 finding is a clear false positive for security purposes.
+
+Here, SHA1 is being used only to generate a content-based ETag for the translation catalog:
+
+h = hashlib.sha1(locale.encode("utf-8"))
+...
+resp.set_etag(_catalog_etag(locale, catalog))
+
+Its purpose is cache validation: if the translation content changes, the ETag changes and the client fetches a fresh copy. It is not being used for passwords, authentication, signatures, tokens, or security-sensitive integrity verification.
+
+Semgrep Finding 5 — Final classification
+
+SHA1 usage in cps\api\i18n.py
+
+Status: False Positive / Non-security use 
+
+For your Lab 4 notes:
+
+Semgrep flagged SHA1 usage in the SPA internationalization endpoint. Manual review confirmed that SHA1 is used only to generate a deterministic ETag for HTTP cache revalidation of translation catalogs. It is not used for authentication, password storage, digital signatures, or other security-sensitive cryptographic purposes. The finding was therefore classified as a false positive for vulnerability purposes.
+
+That finishes the last Semgrep finding I wanted us to manually inspect before moving forward.
+
+CodeQL
+
+We’re now at the point where I want to run CodeQL, triage anything materially different from what Semgrep/manual review found, then build the Lab 4 final candidate shortlist and start Lab 5.
+
+First, from the project root, run: codeql database create .\codeql-db-calibre --language=python --source-root .\targets\Calibre-Web-NextGen --overwrite
+
+Yes — the CodeQL database creation completed successfully. The key final line is:
+
+Successfully created database at C:\Users\eelve\Vulnerability-Research-Lab\codeql-db-calibre.
+
+CodeQL processed 1,134 modules, imported the TRAP data, merged the relations, and finalized the database. The earlier Python-runtime messages did not prevent the build; CodeQL ultimately used Python 3.13.15 and completed extraction.
+
+Next — run the CodeQL security analysis
+
+From your main lab directory, run: codeql database analyze .\codeql-db-calibre codeql/python-queries:codeql-suites/python-security-extended.qls --format=sarif-latest --output=.\evidence\codeql-security-results.sarif --threads=1
+
+This is the actual analysis phase: CodeQL database → security/quality queries → SARIF findings.
+
+
+Excellent — the reduced-memory CodeQL security scan completed successfully. This time CodeQL loaded and evaluated all 52/52 security-focused queries, including path injection, command injection, XSS, SQL injection, LDAP injection, CSRF, open redirect, SSRF, unsafe deserialization, XXE, and others.
+
+More importantly, CodeQL successfully scanned 981/981 Python files and 11/11 GitHub Actions files. That's solid coverage for our Lab 4 documentation.
+
+Next step — see what CodeQL actually found
+
+The terminal output shows that the analysis completed, but the actual alerts are stored in:
+
+evidence\codeql-security-results.sarif
+
+To extract the alerts cleanly Run: $results = Get-Content .\evidence\codeql-security-results.sarif -Raw | ConvertFrom-Json
+$results.runs.results | Select-Object ruleId, level, message
+
+Then we'll classify the CodeQL findings as we did with Semgrep. We only need to investigate findings that could materially change our Lab 4 candidate list; we do not need to chase every scanner warning before starting Lab 5.
+
+
+
+Now we have the actual CodeQL alert categories. There are a lot of results, but we are not going to investigate hundreds of alerts individually. Many are repeated instances of the same rule. For Lab 4, we want the findings most likely to represent a meaningful security issue.
+
+CodeQL identified several especially interesting categories: dozens of path-injection flows, 8 reflected-XSS results, a SQL-injection result, 12 URL-redirection results, multiple SSRF results, and several other security categories. It also identified insecure TLS, insecure temporary-file use, ReDoS, Jinja autoescaping issues, certificate-validation issues, and overly permissive file permissions.
+
+Importantly, CodeQL independently found multiple untrusted URL redirects, which supports the redirect concern we already found through Semgrep/manual review. It also found five full-SSRF flows and two partial-SSRF flows, which are new candidates worth checking before we close static analysis.
+
+We're going to prioritize only these
+
+SQL injection — highest priority because there's only one result and it could be significant.
+
+SSRF — several potentially user-controlled outbound-request flows.
+
+URL redirect — compare CodeQL's results against our existing HTTP_REFERER candidate.
+
+Reflected XSS — inspect enough to determine whether there's a meaningful candidate.
+
+Path injection — inspect representative/high-risk flows rather than all ~60.
+
+Everything else gets documented/triaged only if it appears security-relevant.
+
+The hundreds of py/log-injection alerts, for example, should not distract us from the higher-impact candidates right now.
+
+CodeQL Finding #1 — SQL Injection
+
+Let's start with the single SQL-injection result.
+
+Run exactly this:
+
+$results.runs.results | Where-Object { $_.ruleId -eq "py/sql-injection" } | ForEach-Object {
+
+    $_.locations | ForEach-Object {
+    
+        [PSCustomObject]@{
+        
+            File = $_.physicalLocation.artifactLocation.uri
+            
+            Line = $_.physicalLocation.region.startLine
+            
+            Message = $_.message.text
+            
+        }
+        
+    }
+    
+} | Format-List
+
+We isolated the single CodeQL SQL-injection candidate:
+
+File: cps/admin.py
+Line: 779
+Rule: py/sql-injection
+
+Now we need to see the surrounding code and determine where the SQL statement and its input come from.
+
+Inspect admin.py around line 779
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 745 -First 70
+
+Don't test any payloads yet. First we'll trace:
+
+User input → processing/validation → SQL construction → database execution
+
+Then we'll classify this as either false positive, security-relevant but protected, or a candidate for controlled Lab 5 dynamic testing.
+
+
+
+This is a real static-analysis candidate, but we should not call it a confirmed SQL injection yet.
+
+The important flow is:
+
+GET /ajax/listusers
+
+      ↓
+      
+order = request.args.get("order", "").lower()
+      ↓
+      
+text(sort + " " + order)
+      ↓
+      
+all_user.order_by(order)
+
+There is a good control on sort: if the requested column is not a real User table column, it is reset to "id".
+
+if sort not in ub.User.__table__.columns.keys():
+
+    sort = "id"
+
+But order does not receive equivalent validation:
+
+order = request.args.get("order", "").lower()
+
+if sort != "state" and order:
+
+    order = text(sort + " " + order)
+
+So a request-controlled value is being inserted into a SQLAlchemy text() expression. That is exactly why CodeQL flagged line 779.
+
+There is also an important limitation: the route requires both authentication and the administrator role:
+
+@user_login_required
+
+@admin_required
+
+So even if dynamic testing confirms SQL manipulation, we would still need to determine whether there is meaningful security impact beyond what an administrator can already do.
+
+Current classification
+
+CodeQL SQL Injection — VALID FOR LATER DYNAMIC TESTING 🟠
+
+CodeQL identified a potential SQL injection path in the administrative user-list endpoint. Manual review showed that the requested sort column is validated against known database columns, while the user-controlled order parameter is incorporated into a SQLAlchemy text() expression without an equivalent allowlist. Because the endpoint requires administrator privileges and practical SQL manipulation has not yet been demonstrated, the finding remains a static-analysis candidate pending controlled local validation.
+
+One more static check
+
+Before Lab 5, let's determine what values the application's frontend normally sends for order.
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen -Recurse -File | Select-String -Pattern "ajax/listusers|listusers" | Select-Object Path, LineNumber, Line
+
+This searches the entire Calibre-Web NextGen source tree for references to the /ajax/listusers endpoint.We'll use it to determine what the frontend normally supplies for the order parameter before moving to the next CodeQL candidate.
+
+
+
+
+The search confirms the endpoint is referenced in cps\static\js\table.js, especially around line 1210. That's the frontend code we need.
+
+Inspect the frontend request
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\static\js\table.js | Select-Object -Skip 1190 -First 45
+
+We're specifically looking for how the table sends sort and order to /ajax/listusers.
+
+If we see that the UI normally restricts order to something like asc or desc, that establishes the intended input. But remember: frontend restrictions alone would not protect the server, because a client can send HTTP parameters directly.
+
+
+
+That section of table.js does not show the /ajax/listusers request yet. It’s handling bulk user-table actions.
+
+The search results showed another likely reference around line 1320, so inspect that area next.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\static\js\table.js | Select-Object -Skip 1300 -First 55
+
+We’re looking for the table configuration that sends values such as:
+
+sort
+
+order
+
+offset
+
+limit
+
+search
+
+
+
+That still isn’t the /ajax/listusers table request. We’re close, but instead of guessing line ranges again, let’s jump directly to the exact match.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -Pattern 'ajax/listusers' -Context 8,12
+
+That will show the matching line plus 8 lines before and 12 lines after it.
+
+
+
+That result tells us the exact string ajax/listusers is not present in table.js. The earlier broad search likely matched just listusers in a different form or generated URL logic.
+
+Let’s search only for the word listusers and show context.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -Pattern 'listusers' -Context 10,15
+
+That should reveal the actual table configuration or URL-building logic tied to the admin user list.
+
+
+
+Good — that confirms those table.js matches are for editlistusers, not the GET endpoint CodeQL flagged. So the normal /ajax/listusers request is probably wired from the HTML template through Bootstrap Table rather than hard-coded in this JavaScript file.
+
+Inspect the user-table template
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\templates\*.html -Pattern 'user-table|listusers' -Context 5,10
+
+We’re looking for something like:
+
+data-url="..."
+
+data-sort-name="..."
+
+data-sort-order="..."
+
+That should tell us the intended frontend values for sort and order.
+
+Perfect. This confirms how /ajax/listusers is connected to the frontend:
+
+<table id="user-table"
+    
+       ...
+       
+       data-url="{{url_for('admin.list_users')}}"
+       
+       ...
+       
+>
+
+So Bootstrap Table generates the offset, limit, search, sort, and order parameters automatically. The template also marks columns as sortable. The important security point remains unchanged: the browser UI is not a security boundary. An authenticated administrator could send a modified order parameter directly.
+
+SQL candidate static-analysis result
+
+We now have enough static evidence to keep this candidate for Lab 5:
+
+GET /ajax/listusers
+
+        ↓
+        
+request.args["order"]
+
+        ↓
+        
+.lower()
+
+        ↓
+        
+NO server-side asc/desc allowlist
+
+        ↓
+        
+text(sort + " " + order)
+
+        ↓
+        
+SQLAlchemy order_by()
+
+Meanwhile, sort does have a server-side allowlist:
+
+if sort not in ub.User.__table__.columns.keys():
+
+    sort = "id"
+
+That difference is exactly what makes order interesting.
+
+Classification: 🟠 Potential SQL Injection / SQL Expression Injection — Dynamic validation required.
+
+It is not a confirmed vulnerability, and because /ajax/listusers requires @admin_required, even successful SQL manipulation would need a meaningful security impact assessment.
+
+
+CodeQL identified a potential SQL injection path in the administrative user-list endpoint. Manual tracing confirmed that the requested sort column is validated against known database columns, while the request-controlled order parameter is incorporated into a SQLAlchemy text() expression without an equivalent server-side allowlist. The normal frontend uses Bootstrap Table to construct the request, but client-side behavior does not constitute server-side validation. Because the endpoint requires administrator privileges and exploitability has not been demonstrated, the finding remains a candidate for controlled local dynamic testing.
+
+CodeQL SSRF
+
+Now let's inspect the five full-SSRF candidates instead of spending more time on this one.
+
 Run:
+
+$results.runs.results | Where-Object { $_.ruleId -eq "py/full-ssrf" } | ForEach-Object {
+
+    $_.locations | ForEach-Object {
+    
+        [PSCustomObject]@{
+        
+            File = $_.physicalLocation.artifactLocation.uri
+            
+            Line = $_.physicalLocation.region.startLine
+            
+        }
+        
+    }
+    
+} | Format-Table -AutoSize
+
+We'll see whether those five alerts collapse into one or two underlying request flows.
+
+
+
+the five full-SSRF alerts collapse into just two files:
+
+cps/admin.py   1900
+
+cps/admin.py   1921
+
+cps/admin.py   3526
+
+cps/admin.py   3575
+
+cps/helper.py  2124
+
+That means we can review the underlying flows instead of treating them as five separate issues.
+
+Next step — inspect the first admin.py SSRF block
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 1870 -First 80
+
+We’re looking for:
+
+user-controlled URL or host
+        ↓
+validation / allowlist / normalization
+        ↓
+requests.get / post / session request
+        ↓
+response handling
+
+we’ll decide whether the two findings around 1900 and 1921 are the same underlying SSRF path and whether they’re worth carrying into Lab 5.
+
+
+
+This is a strong SSRF candidate, but the context matters a lot.
+
+The flow is:
+
+admin-supplied OAuth/OIDC URL
+
+        ↓
+        
+metadata_url / server_url
+
+        ↓
+        
+requests.get(...)
+
+        ↓
+        
+server makes outbound request
+
+For example:
+
+metadata_url = to_save.get("config_generic_oauth_metadata_url", "")
+...
+resp = requests.get(metadata_url, timeout=3, verify=constants.OAUTH_SSL_STRICT)
+
+and:
+
+update["oauth_base_url"] = to_save["config_generic_oauth_server_url"]
+
+resp = requests.get(
+
+    os.path.join(update["oauth_base_url"], ".well-known/openid-configuration"),
+    
+    timeout=3,
+    
+    verify=constants.OAUTH_SSL_STRICT
+    
+)
+
+There is no visible host allowlist, scheme restriction, or private-IP check in this function. So CodeQL is correctly seeing a server-side request whose destination comes from configuration input.
+
+However, this appears to be part of OAuth/OIDC administration, and products normally need to let an administrator configure an identity-provider URL. If only administrators can reach the configuration path, the security impact may be limited or considered intended functionality.
+
+Current classification
+
+🟠 Potential SSRF through OAuth/OIDC configuration — needs authorization-context review
+
+Not confirmed vulnerability yet.
+
+CodeQL identified server-side requests to administrator-supplied OAuth/OIDC metadata and server URLs. Manual review confirmed that these URLs are passed to requests.get() without an explicit destination allowlist or private-network restriction in the reviewed helper. Because the functionality appears intended to support administrator-configured identity providers, exploitability and security impact depend on which users can modify these settings and whether administrative SSRF is considered within the application's threat model.
+
+Find who can call this helper
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\admin.py -Pattern "_configuration_oauth_helper\(" -Context 8,12
+
+That will tell us whether these SSRF paths are strictly behind @admin_required or reachable through some lower-privileged configuration flow.
+
+
+
+We’ve confirmed _configuration_oauth_helper() is called from the main configuration-saving flow around line 3004.
+
+Now we need to inspect the route/decorators for that configuration function to see who is authorized to reach it.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 2890 -First 150
+
+We’re looking for the function definition above that block and decorators such as:
+
+@user_login_required
+
+@admin_required
+
+If it is strictly admin-only, we’ll likely classify this SSRF as admin-configured / lower-priority rather than a strong vulnerability candidate.
+
+
+
+We still don’t have the route decorators. The snippet starts inside the configuration function, so we need to go a little farther up.
+
+Run this: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 2810 -First 90
+
+
+
+We found the helper itself, but still not the route that invokes it. The next static check is simply to identify every caller of _configuration_update_helper().
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\admin.py -Pattern "_configuration_update_helper\(" -Context 8,12
+
+That should finally show the route and decorators around the configuration save path. If it is protected by @admin_required, we can classify these OAuth/OIDC SSRF findings as administrator-controlled and lower priority and move on to the next SSRF location.
+
+
+That confirms the important part: the configuration update endpoint is admin-only.
+
+The relevant route is:
+
+@admi.route("/admin/ajaxconfig", methods=["POST"])
+
+@user_login_required
+
+@admin_required
+
+def ajax_config():
+
+    return _configuration_update_helper()
+
+So the OAuth/OIDC SSRF path requires an authenticated administrator to submit the configuration. That makes this much less compelling as a vulnerability because configuring an external identity provider inherently requires the server to contact an administrator-specified URL.
+
+Classification for these first two SSRF findings
+
+I would mark the findings around admin.py:1900 and 1921 as:
+
+Low-priority / likely intended administrative functionality
+
+CodeQL identified potential SSRF paths in the generic OAuth/OIDC configuration logic. Manual tracing confirmed that administrator-controlled metadata and server URLs are passed to requests.get() without explicit private-address filtering. However, the request path is protected by both authentication and administrator-role checks, and outbound requests are part of the intended identity-provider configuration workflow. The finding was therefore deprioritized pending evidence of a meaningful security boundary violation.
+
+We do not need to carry this one into Lab 5 unless something else later changes our assessment.
+
+Now let’s inspect the next CodeQL SSRF pair at admin.py:3526 and 3575.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 3490 -First 110
+
+
+
+
+These two CodeQL findings at admin.py:3526 and 3575 are also clearly administrator-only OIDC test functions.
+
+The first path is:
+
+@admi.route("/admin/test_oidc", methods=["POST"])
+
+@user_login_required
+
+@admin_required
+
+def test_oidc():
+
+    url = request.get_json().get('url')
+    
+    ...
+    
+    response = requests.get(discovery_url, timeout=5, verify=constants.OAUTH_SSL_STRICT)
+
+The second is:
+
+@admi.route("/admin/test_metadata", methods=["POST"])
+
+@user_login_required
+
+@admin_required
+
+def test_metadata():
+
+    metadata_url = request.get_json().get('url')
+    
+    ...
+    
+    response = requests.get(metadata_url, timeout=5, verify=constants.OAUTH_SSL_STRICT)
+
+CodeQL is technically correct that user-controlled URLs reach requests.get(), but both routes require:
+
+Authenticated user
+
+        ↓
+        
+Administrator role
+
+        ↓
+        
+OIDC connection-testing feature
+
+        ↓
+        
+Server intentionally contacts supplied URL
+
+There is also no visible private-IP filtering or destination allowlist, but because the explicit purpose of these endpoints is to let an administrator test an identity-provider URL, I would deprioritize both.
+
+Classification
+
+Likely intended administrative functionality / low-priority SSRF
+
+We now have:
+
+admin.py:1900  → Admin OAuth configuration     → Deprioritize
+
+admin.py:1921  → Admin OIDC configuration      → Deprioritize
+
+admin.py:3526  → Admin OIDC test endpoint      → Deprioritize
+
+admin.py:3575  → Admin metadata test endpoint  → Deprioritize
+
+That leaves the more interesting one:
+
+cps/helper.py:2124
+
+This one matters more because we haven't established its authorization boundary yet.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Skip 2085 -First 85
+
+We'll trace helper.py:2124 and determine whether this fifth SSRF alert is materially different from the four admin-only findings.
+
+
+
+This fifth SSRF finding is already much more interesting than the four admin-only OIDC results, because the code contains an explicit SSRF defense.
+
+The important branch is:
+
+if cli_param.allow_localhost:
+    img = requests.get(url, timeout=(10, 30), allow_redirects=True, stream=True)
+elif use_advocate:
+    img = cw_advocate.get(url, timeout=(10, 30), allow_redirects=True, stream=True)
+else:
+    ...
+
+And the developer comment directly says:
+
+# advocate path stays SSRF-safe under redirects because validation
+
+# happens per-connection ...
+
+So CodeQL is probably flagging the raw requests.get() branch, while the normal protected path appears to use advocate, which is specifically intended to prevent SSRF to local/private destinations.
+
+The key question is now:
+
+When can cli_param.allow_localhost be enabled, and is that an intentional administrator/startup option?
+
+If it is an explicit command-line option such as “allow localhost cover downloads,” then this may be a deliberate security bypass/configuration feature, not a vulnerability.
+
+Find where allow_localhost is defined and documented Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "allow_localhost" | Select-Object Path, LineNumber, Line
+
+
+we can determine whether helper.py:2124 is:
+
+A. a genuine SSRF candidate,
+
+B. a protected flow that CodeQL cannot understand, or
+
+C. an intentional opt-in localhost allowance.
+
+
+shows only three references:
+
+cps\cli.py      line 30    self.allow_localhost = None
+cps\cli.py      line 119   self.allow_localhost = args...
+cps\helper.py   line 2123  if cli_param.allow_localhost:
+
+So the next thing we need is the actual command-line definition around cli.py:119. That will tell us whether this is an intentional opt-in setting.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\cli.py | Select-Object -Skip 95 -First 40
+
+If it shows something like an explicit --allow-localhost option, we'll determine exactly what that option permits before deciding whether CodeQL's helper.py:2124 SSRF finding survives Lab 4.
+
+
+
+
+
