@@ -1568,3 +1568,11 @@ Potential XSS via make_response(text_data)
 Status: False Positive / Mitigated 
 
 Semgrep flagged the TXT book-serving response as a potential XSS risk because raw file content reaches make_response(). Manual review confirmed that TXT is an allowed upload type and that the response branch does not set security headers locally. However, an application-wide after_request hook applies X-Content-Type-Options: nosniff and a restrictive Content Security Policy to responses. These controls substantially mitigate browser content-sniffing and script execution, so the finding was classified as a false positive/mitigated condition.
+
+The next useful one from your scan is the SHA1 usage in:
+
+cps\api\i18n.py
+
+SHA1 findings are often harmless when used for caching, identifiers, or non-security checksums, but serious if used for password hashing, signatures, or security-sensitive integrity.
+
+Run:
