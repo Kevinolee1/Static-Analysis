@@ -2033,7 +2033,7 @@ We still don’t have the route decorators. The snippet starts inside the config
 
 Run this: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 2810 -First 90
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/51e07d084780e075b053de865e4411eac604c972/Screenshot%202026-09-10%20104418.png)
 
 We found the helper itself, but still not the route that invokes it. The next static check is simply to identify every caller of _configuration_update_helper().
 
