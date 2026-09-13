@@ -1644,7 +1644,7 @@ $results.runs.results | Select-Object ruleId, level, message
 
 Then we'll classify the CodeQL findings as we did with Semgrep. We only need to investigate findings that could materially change our Lab 4 candidate list; we do not need to chase every scanner warning before starting Lab 5.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/7b69cbc3b5c0a9153e8ac27dbf8bd833ea2aa98e/Screenshot%202026-09-10%20095201.png)
 
 Now we have the actual CodeQL alert categories. There are a lot of results, but we are not going to investigate hundreds of alerts individually. Many are repeated instances of the same rule. For Lab 4, we want the findings most likely to represent a meaningful security issue.
 
