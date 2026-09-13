@@ -1585,7 +1585,7 @@ weak cryptographic practice,
 
 or a real security candidate.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/215454f70664add31092ab59083ae5be8bbed76d/Screenshot%202026-09-10%20095550.png)
+
 
 This SHA1 finding is a clear false positive for security purposes.
 
@@ -1627,7 +1627,7 @@ From your main lab directory, run: codeql database analyze .\codeql-db-calibre c
 
 This is the actual analysis phase: CodeQL database → security/quality queries → SARIF findings.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/323d80ae035728eb89702e03838d966356921552/Screenshot%202026-09-10%20095550.png)
+
 
 Excellent — the reduced-memory CodeQL security scan completed successfully. This time CodeQL loaded and evaluated all 52/52 security-focused queries, including path injection, command injection, XSS, SQL injection, LDAP injection, CSRF, open redirect, SSRF, unsafe deserialization, XXE, and others.
 
@@ -1700,7 +1700,7 @@ Line: 779
 
 Rule: py/sql-injection
 
-
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/215454f70664add31092ab59083ae5be8bbed76d/Screenshot%202026-09-10%20095550.png)
 
 Now we need to see the surrounding code and determine where the SQL statement and its input come from.
 
