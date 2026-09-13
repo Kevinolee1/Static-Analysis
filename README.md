@@ -2207,6 +2207,7 @@ We want to see whether allow_localhost is an explicit command-line switch and ho
 
 If it shows something like an explicit --allow-localhost option, we'll determine exactly what that option permits before deciding whether CodeQL's helper.py:2124 SSRF finding survives Lab 4.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/da0221b676c759ebe2e52bf583deab5043609d14/Screenshot%202026-09-10%20125020.png)
 
 That screenshot explains it: our range started too late. We’re seeing certificate/key handling, but not the line where allow_localhost is assigned.
 
