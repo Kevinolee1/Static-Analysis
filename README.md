@@ -2151,7 +2151,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Sk
 
 We'll trace helper.py:2124 and determine whether this fifth SSRF alert is materially different from the four admin-only findings.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/815090d7c79d2a0096a485cc44d7409c354b4d29/Screenshot%202026-09-10%20105352.png)
 
 This fifth SSRF finding is already much more interesting than the four admin-only OIDC results, because the code contains an explicit SSRF defense.
 
