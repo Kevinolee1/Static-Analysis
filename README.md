@@ -2027,7 +2027,7 @@ We’re looking for the function definition above that block and decorators such
 
 If it is strictly admin-only, we’ll likely classify this SSRF as admin-configured / lower-priority rather than a strong vulnerability candidate.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/5f9d9cfd69a20077bdc6c33e22c17f8b6b134319/Screenshot%202026-09-10%20105352.png)
 
 We still don’t have the route decorators. The snippet starts inside the configuration function, so we need to go a little farther up.
 
