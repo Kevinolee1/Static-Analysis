@@ -1823,7 +1823,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -P
 
 That should reveal the actual table configuration or URL-building logic tied to the admin user list.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/8716ff5c02a44925e1d874df35fc984ee49c84b6/Screenshot%202026-09-10%20102034.png)
 
 Good — that confirms those table.js matches are for editlistusers, not the GET endpoint CodeQL flagged. So the normal /ajax/listusers request is probably wired from the HTML template through Bootstrap Table rather than hard-coded in this JavaScript file.
 
