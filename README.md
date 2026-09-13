@@ -2027,7 +2027,7 @@ We’re looking for the function definition above that block and decorators such
 
 If it is strictly admin-only, we’ll likely classify this SSRF as admin-configured / lower-priority rather than a strong vulnerability candidate.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1e53907552b365dbdd8f93deb3e17e168a56b7a9/Screenshot%202026-09-10%20104149.png)
 
 We still don’t have the route decorators. The snippet starts inside the configuration function, so we need to go a little farther up.
 
@@ -2072,7 +2072,6 @@ We do not need to carry this one into Lab 5 unless something else later changes 
 Now let’s inspect the next CodeQL SSRF pair at admin.py:3526 and 3575.
 
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 3490 -First 110
-
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/578436b0e2c6342c4ef9602c13bf2c95f7d6450b/Screenshot%202026-09-10%20104950.png)
 
