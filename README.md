@@ -2074,7 +2074,7 @@ Now let’s inspect the next CodeQL SSRF pair at admin.py:3526 and 3575.
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 3490 -First 110
 
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/578436b0e2c6342c4ef9602c13bf2c95f7d6450b/Screenshot%202026-09-10%20104950.png)
 
 These two CodeQL findings at admin.py:3526 and 3575 are also clearly administrator-only OIDC test functions.
 
