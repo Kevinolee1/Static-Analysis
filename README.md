@@ -1921,7 +1921,7 @@ $results.runs.results | Where-Object { $_.ruleId -eq "py/full-ssrf" } | ForEach-
 
 We'll see whether those five alerts collapse into one or two underlying request flows.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f99a1475b1045812f9ac874b0ecc6e0e70ea2c74/Screenshot%202026-09-10%20102923.png)
 
 the five full-SSRF alerts collapse into just two files:
 
