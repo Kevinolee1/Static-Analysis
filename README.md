@@ -2011,7 +2011,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\admin.py -Pattern "_c
 
 That will tell us whether these SSRF paths are strictly behind @admin_required or reachable through some lower-privileged configuration flow.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/70752a2ee4fba49eac7f87815c8a8bb0ba607b40/Screenshot%202026-09-10%20103844.png)
 
 We’ve confirmed _configuration_oauth_helper() is called from the main configuration-saving flow around line 3004.
 
@@ -2027,7 +2027,7 @@ We’re looking for the function definition above that block and decorators such
 
 If it is strictly admin-only, we’ll likely classify this SSRF as admin-configured / lower-priority rather than a strong vulnerability candidate.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/5f9d9cfd69a20077bdc6c33e22c17f8b6b134319/Screenshot%202026-09-10%20105352.png)
+
 
 We still don’t have the route decorators. The snippet starts inside the configuration function, so we need to go a little farther up.
 
