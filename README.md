@@ -2041,6 +2041,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\admin.py -Pattern "_c
 
 That should finally show the route and decorators around the configuration save path. If it is protected by @admin_required, we can classify these OAuth/OIDC SSRF findings as administrator-controlled and lower priority and move on to the next SSRF location.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/999b7814239b1888e92f3b1781e45fa06c4e66b2/Screenshot%202026-09-10%20103844.png)
 
 That confirms the important part: the configuration update endpoint is admin-only.
 
