@@ -1630,7 +1630,7 @@ From your main lab directory, run: codeql database analyze .\codeql-db-calibre c
 
 This is the actual analysis phase: CodeQL database → security/quality queries → SARIF findings.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/5de860209f3ef0af110f9ae8241d65292d50a5fe/Screenshot%202026-09-10%20095059.png)
 
 Excellent — the reduced-memory CodeQL security scan completed successfully. This time CodeQL loaded and evaluated all 52/52 security-focused queries, including path injection, command injection, XSS, SQL injection, LDAP injection, CSRF, open redirect, SSRF, unsafe deserialization, XXE, and others.
 
