@@ -1953,7 +1953,7 @@ response handling
 
 we’ll decide whether the two findings around 1900 and 1921 are the same underlying SSRF path and whether they’re worth carrying into Lab 5.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/18e48e5cc31ff8ba458bfcd019c8795dea0069fa/Screenshot%202026-09-10%20103347.png)
 
 This is a strong SSRF candidate, but the context matters a lot.
 
