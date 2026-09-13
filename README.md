@@ -1813,7 +1813,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -P
 
 That will show the matching line plus 8 lines before and 12 lines after it.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/d3b2f44559c8307c357bea032eeb95cbeb52a61e/Screenshot%202026-09-10%20101530.png)
 
 That result tells us the exact string ajax/listusers is not present in table.js. The earlier broad search likely matched just listusers in a different form or generated URL logic.
 
