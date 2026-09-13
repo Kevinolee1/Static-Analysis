@@ -1615,6 +1615,9 @@ We’re now at the point where I want to run CodeQL, triage anything materially 
 
 First, from the project root, run: codeql database create .\codeql-db-calibre --language=python --source-root .\targets\Calibre-Web-NextGen --overwrite
 
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/367ff915dd379d4ad8b8d9952db770232fe66efb/Screenshot%202026-09-10%20090514.png)
+
 Yes — the CodeQL database creation completed successfully. The key final line is:
 
 Successfully created database at C:\Users\eelve\Vulnerability-Research-Lab\codeql-db-calibre.
