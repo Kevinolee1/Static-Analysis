@@ -2281,3 +2281,483 @@ All five py/full-ssrf results have now been reviewed. None currently deserves pr
 
 Our more promising CodeQL categories remain reflected XSS, URL redirection, and selected path-injection findings. We already have the Semgrep HTTP_REFERER redirect candidate, so CodeQL's redirect results may corroborate that one rather than create a new candidate.
 
+**extract the reflected XSS locations**
+
+Run: 
+
+$results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object {
+
+    $_.locations | ForEach-Object {
+    
+        [PSCustomObject]@{
+        
+            File = $_.physicalLocation.artifactLocation.uri
+            
+            Line = $_.physicalLocation.region.startLine
+            
+        }
+        
+    }
+    
+} | Format-Table -AutoSize
+
+We’ll then group duplicate findings, inspect the most promising route first, and classify each as:
+
+False positive
+
+Mitigated
+
+Low priority
+
+Valid dynamic-testing candidate
+
+We’ll keep this focused and only carry forward findings that survive manual review.
+
+No output usually means the rule ID is slightly different from py/reflective-xss, even though the summary described it as reflected XSS.
+
+Reload the SARIF file with: $results = Get-Content .\evidence\codeql-security-results.sarif -Raw | ConvertFrom-Json
+
+
+
+Then verify it loaded: $results.runs.results | Select-Object -First 10 ruleId
+
+
+
+$results is loaded correctly again. The screenshot confirms CodeQL results are available, including py/incomplete-url-substring-sanitization and multiple py/path-injection findings.
+
+Now let’s identify the exact XSS rule ID from all results. Run this one-line command: $results.runs.results | Select-Object -ExpandProperty ruleId | Sort-Object -Unique | Where-Object { $_ -match "cross|script|html|xss" }
+
+we found the exact rule ID:
+
+py/reflective-xss
+
+Now extract all reflected XSS locations with:
+
+$results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object {
+
+    $_.locations | ForEach-Object {
+    
+        [PSCustomObject]@{
+        
+            File = $_.physicalLocation.artifactLocation.uri
+            
+            Line = $_.physicalLocation.region.startLine
+            
+        }
+        
+    }
+    
+} | Format-Table -AutoSize
+
+That will give us the exact CodeQL rule ID so we can pull the 8 reflected-XSS findings correctly.
+
+
+
+that confirms the rule exactly:
+
+py/reflective-xss
+
+Description:
+
+Reflected server-side cross-site scripting
+
+Now pull the actual file locations. Use this as a single line to avoid the >> continuation issue: $results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object { $_.locations | ForEach-Object { [PSCustomObject]@{ File=$_.physicalLocation.artifactLocation.uri; Line=$_.physicalLocation.region.startLine } } } | Format-Table -AutoSize
+
+we’ll inspect the XSS findings one group at a time and decide which, if any, survive into Lab 5.
+
+
+
+now we have the 8 reflected-XSS locations.
+
+Most of them are in tests, so we can immediately deprioritize those as non-production code. The production findings are:
+
+cps/admin.py             1432
+
+cps/editbooks.py          417
+
+cps/readingservices.py    150
+
+The five under tests/ are not candidates for a real application vulnerability.
+
+Let’s inspect the first production finding at admin.py:1432.
+
+Run:
+
+We’ll determine whether the reflected value is actually rendered unsafely or whether CodeQL is seeing a safe/escaped response path.
+
+
+
+This first production XSS hit looks like it is probably tied to the path chooser flow, not the Kobo functions below it.
+
+The relevant route in your snippet is:
+
+@admi.route("/ajax/pathchooser/")
+
+@user_login_required
+
+@admin_required
+
+def ajax_pathchooser():
+
+    return pathchooser()
+
+So before we call this a real XSS candidate, we need to inspect what pathchooser() actually returns and whether it reflects request input into HTML.
+
+Run this: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "def pathchooser" | Select-Object Path, LineNumber, Line
+
+If pathchooser() renders user-controlled path data into HTML without escaping, this one could survive. If it returns 
+escaped JSON or uses Jinja escaping correctly, we’ll close it as a false positive or mitigated finding.
+
+
+
+pathchooser() is in the same file at admin.py:1748.
+
+Now let’s inspect that function directly: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 1738 -First 80
+
+We’ll specifically check whether pathchooser() takes values from request.args, request.form, or another user-controlled 
+source and then places them into an HTML response without escaping. we’ll classify XSS finding #1.
+
+
+
+This is looking much less like a real XSS issue.
+
+The key line is:
+
+sanitized_f = str(Markup.escape(f))
+
+Then that escaped value is used in:
+
+data = {
+    "name": sanitized_f,
+    
+    "fullpath": os.path.join(cwd, sanitized_f)
+}
+
+So filenames coming from the filesystem are explicitly HTML-escaped before being returned.
+
+The remaining question is how files, cwd, parent_dir, and old_file are returned to the client. We need to inspect the end of pathchooser() before we close this finding.
+
+So filenames coming from the filesystem are explicitly HTML-escaped before being returned.
+
+The remaining question is how files, cwd, parent_dir, and old_file are returned to the client. We need to inspect the end of pathchooser() before we close this finding.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Skip 1810 -First 50
+
+Then we can make the final classification for XSS finding #1
+
+
+
+We have enough to classify XSS finding #1 (cps/admin.py:1432).
+
+The response is built with:
+
+context = {
+
+    "cwd": cwd,
+    
+    "files": files,
+    
+    "parentdir": parent_dir,
+    
+    "type": browse_for,
+    
+    "oldfile": old_file,
+    
+    "absolute": absolute,
+    
+}
+return json.dumps(context)
+
+The most directly displayed filenames are explicitly escaped with:
+
+sanitized_f = str(Markup.escape(f))
+
+Also, the route is restricted to authenticated administrators:
+
+@user_login_required
+
+@admin_required
+
+There is one minor concern: it returns json.dumps(context) as a plain Flask string instead of an explicit JSON response, and some path values such as cwd are not individually HTML-escaped. But exploitation would appear to require an administrator to browse an already-existing local filesystem path containing attacker-controlled HTML-like characters. That is not a strong practical XSS path from what we've seen.
+
+Classification
+
+🟡 Low priority / likely false positive for practical reflected XSS
+
+I would not carry this into Lab 5 unless the other XSS findings reveal a related, more reachable pattern.
+
+Now let's inspect the second production XSS result:
+
+cps/editbooks.py:417
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 385 -First 65
+
+
+
+This one looks more plausible than the path chooser, because the CodeQL hit is inside a response that can return structured error data:
+
+return json.dumps({
+
+    'success': False,
+    
+    'partial': bool(successful_books),
+    
+    'successful_books': successful_books,
+    
+    'failed_books': failed_books,
+    
+    'message': message,
+    
+})
+
+The important question is whether failed_books can contain attacker-controlled strings that later get inserted into the page as HTML by the frontend.
+
+From the snippet alone, we can see that failed_ids_message is built only from integer book_id values, so that part is not an obvious XSS source. But failed_books itself may contain error text or metadata.
+
+Let’s trace where failed_books is populated.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\editbooks.py -Pattern "failed_books" -Context 4,8
+
+We can see whether the reflected-XSS finding at editbooks.py:417 is coming from user-controlled metadata, exception text, or a safe value
+
+
+
+this gives us the key data-flow detail.
+
+failed_books itself contains only small structured fields such as:
+
+{
+
+    'book_id': ...,
+    
+    'stage': 'lookup',
+    
+    'files_may_be_inconsistent': False
+    
+}
+
+The potentially interesting part is the first case:
+
+'book_id': book_id
+
+because book_id originally comes from selections. If selections is request-controlled and not forced to integers before this point, CodeQL may be tracing that value into:
+
+return json.dumps({
+
+    ...
+    
+    'failed_books': failed_books,
+    
+})
+
+That still does not automatically mean exploitable XSS. We need to check two things: where selections comes from, and what route/method/access controls protect this function.
+
+Run this next: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 230 -First 55
+
+That should show the route decorators and how selections is populated, which will let us make a much stronger classification for XSS finding #2.
+
+
+
+This one is more interesting than the first XSS hit.
+
+We now have a clear source:
+
+d = request.get_json()
+selections = d.get('selections')
+
+Then each unvalidated book_id from that JSON can flow into:
+
+failed_books.append({
+
+    'book_id': book_id,
+    
+    ...
+    
+})
+
+and finally:
+
+return json.dumps({
+
+    ...
+    
+    'failed_books': failed_books,
+    
+})
+
+So CodeQL has a legitimate taint path:
+
+POST JSON input
+
+    ↓
+    
+selections[]
+
+    ↓
+    
+book_id
+
+    ↓
+    
+failed_books
+
+    ↓
+    
+json.dumps(...)
+
+    ↓
+    
+HTTP response
+
+The important nuance is that json.dumps() serializes the data, but this function returns a plain string rather than an explicit application/json response. In Flask, that can matter because a string response may be served as HTML unless something else changes the content type.
+
+We should not call this XSS yet, though. We need to see how /ajax/editselectedbooks is called by the frontend and whether the returned fields are inserted into the page as HTML.
+
+Current classification
+
+🟠 Reflected-XSS candidate — manual tracing required
+
+It survives static review better than the pathchooser finding.
+
+Now find the frontend code that calls this endpoint: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "editselectedbooks" | Select-Object Path, LineNumber, Line
+
+
+
+we found the frontend reference at:
+
+cps/static/js/table.js:365
+
+That’s the one we care about. The editbooks.py results are server-side references we already know about.
+
+**Inspect how JavaScript handles the response**
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\static\js\table.js | Select-Object -Skip 335 -First 65
+
+We’re specifically looking for what happens after the request to editselectedbooks, such as whether the response is handled with .text(), .html(), innerHTML, a modal, an alert, or parsed as JSON. This should tell us whether XSS finding #2 stays on the Lab 5 candidate list or gets eliminated.
+
+
+
+
+This keeps the finding alive for one more check.
+
+The AJAX call explicitly expects JSON:
+
+dataType: "json",
+
+and only passes this field forward:
+
+message: booTitles.message
+
+The user-controlled failed_books data is not directly inserted into the page here.
+
+So the remaining question is whether handleListServerResponse() safely renders message. The message itself currently appears to be constructed from counts and integer book IDs, which already lowers the risk substantially.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\*.js -Pattern "function handleListServerResponse|handleListServerResponse =" -Context 3,15
+
+If that function uses safe text insertion, we can close XSS finding #2 as a false positive. If it uses .html() or innerHTML, we’ll inspect whether any attacker-controlled content can actually reach booTitles.message.
+
+
+
+Good catch. This function does use HTML insertion, specifically:
+
+$("#navbar").after(
+
+    '<div class="row-fluid text-center">' +
+    
+    '<div id="flash_' + item.type +
+    
+    '" class="alert alert-' + item.type + '">' +
+    
+    item.message +
+    
+    '</div>' +
+    
+    '</div>'
+    
+);
+
+So item.message is inserted into an HTML string without client-side escaping. That is an XSS-sensitive sink.
+
+However, for the specific editselectedbooks flow we traced, booTitles.message is generated server-side from fixed text, counts, and failed_ids, where failed_ids explicitly accepts only integer book_id values:
+
+if isinstance(failure['book_id'], int)
+
+and not isinstance(failure['book_id'], bool)
+
+Therefore, based on the path we've traced:
+
+editbooks.py:417 → likely false positive for reflected XSS.
+
+The JavaScript sink itself deserves attention, though, because another endpoint passing attacker-controlled text into handleListServerResponse() could create XSS. We shouldn't automatically dismiss the sink globally.
+
+XSS progress
+
+admin.py:1432       → Low priority / likely false positive
+
+editbooks.py:417    → Likely false positive for this specific flow
+
+readingservices.py:150 → NEXT
+
+Let's inspect the final production CodeQL XSS result: Get-Content .\targets\Calibre-Web-NextGen\cps\readingservices.py | Select-Object -Skip 115 -First 70
+
+This is the last production reflected-XSS result from this CodeQL group.
+
+No problem — that last PowerShell error happened because the sentence:
+
+This is the last production reflected-XSS result from this CodeQL group.
+
+got pasted into PowerShell as if it were a command.
+
+The code output itself is the part we need.
+
+For readingservices.py:150, the key line is:
+
+return make_response
+
+    readingservices_response.content
+    
+    readingservices_response.status_code,
+    
+    response_headers.items()
+    
+)
+
+So this endpoint is effectively proxying upstream Kobo Reading Services content and headers back to the client.
+
+That means CodeQL sees:
+
+Upstream HTTP response
+
+    ↓
+    
+readingservices_response.content
+
+    ↓
+    
+make_response(...)
+
+    ↓
+    
+client
+
+This can look like reflected XSS because raw upstream content is returned. But the crucial factor is whether the attacker can control the upstream response body or destination. From what we’ve seen here, the destination is kobo_url, which appears to be part of the application’s Kobo proxy logic rather than arbitrary user input.
+
+Current classification
+
+Likely false positive / proxy behavior, unless we later find that kobo_url or the upstream response can be attacker-controlled.
+
+I would not carry this one into Lab 5 yet.
+
+So the production reflected-XSS triage currently looks like this:
+
+admin.py:1432 → low priority / likely false positive
+
+editbooks.py:417 → likely false positive for this flow
+
+readingservices.py:150 → likely proxy behavior / false positive
+
+5 test-file findings → non-production, ignore
+
+That means the CodeQL reflected-XSS category does not currently give us a strong new Lab 5 candidate.
+
+Next best category is URL redirection, especially because Semgrep already found the HTTP_REFERER redirects in shelf.py. We can use CodeQL to see whether it corroborates that same path or finds something new.
