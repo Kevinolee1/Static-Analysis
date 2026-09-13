@@ -2189,11 +2189,14 @@ B. a protected flow that CodeQL cannot understand, or
 
 C. an intentional opt-in localhost allowance.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/5347e9d7e0724879e0bd7edaaa4e372579ae8594/Screenshot%202026-09-10%20124226.png)
 
-shows only three references:
+Only three references is shown:
 
 cps\cli.py      line 30    self.allow_localhost = None
+
 cps\cli.py      line 119   self.allow_localhost = args...
+
 cps\helper.py   line 2123  if cli_param.allow_localhost:
 
 So the next thing we need is the actual command-line definition around cli.py:119. That will tell us whether this is an intentional opt-in setting.
