@@ -1701,7 +1701,6 @@ Line: 779
 Rule: py/sql-injection
 
 
-![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png))
 
 Now we need to see the surrounding code and determine where the SQL statement and its input come from.
 
@@ -1715,7 +1714,7 @@ User input → processing/validation → SQL construction → database execution
 
 Then we'll classify this as either false positive, security-relevant but protected, or a candidate for controlled Lab 5 dynamic testing.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f40b50b95599fff1cfa361958d9b0f07ac6ca15e/Screenshot%202026-09-10%20100725.png)
+![Image alt](![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png))
 
 This is a real static-analysis candidate, but we should not call it a confirmed SQL injection yet.
 
@@ -1771,8 +1770,7 @@ Run: Get-ChildItem .\targets\Calibre-Web-NextGen -Recurse -File | Select-String 
 
 This searches the entire Calibre-Web NextGen source tree for references to the /ajax/listusers endpoint.We'll use it to determine what the frontend normally supplies for the order parameter before moving to the next CodeQL candidate.
 
-
-
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f40b50b95599fff1cfa361958d9b0f07ac6ca15e/Screenshot%202026-09-10%20100725.png)
 
 The search confirms the endpoint is referenced in cps\static\js\table.js, especially around line 1210. That's the frontend code we need.
 
