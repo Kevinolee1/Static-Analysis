@@ -1781,7 +1781,7 @@ We're specifically looking for how the table sends sort and order to /ajax/listu
 
 If we see that the UI normally restricts order to something like asc or desc, that establishes the intended input. But remember: frontend restrictions alone would not protect the server, because a client can send HTTP parameters directly.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/6de5a1e4c559278f00c53128e481efdfaeb4f6eb/Screenshot%202026-09-10%20101300.png)
 
 That section of table.js does not show the /ajax/listusers request yet. It’s handling bulk user-table actions.
 
