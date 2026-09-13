@@ -2223,7 +2223,7 @@ Once we see what args or environment variable controls it, we’ll trace where t
 
 This gives us the key information.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0a882917bcbca8a610a61bb0b0b939620c84333d/Screenshot%202026-09-12%20212220.png)
 
 The screenshot shows:
 
