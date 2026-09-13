@@ -2192,9 +2192,81 @@ So the next thing we need is the actual command-line definition around cli.py:11
 
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\cli.py | Select-Object -Skip 95 -First 40
 
+We want to see whether allow_localhost is an explicit command-line switch and how it is described.
+
 If it shows something like an explicit --allow-localhost option, we'll determine exactly what that option permits before deciding whether CodeQL's helper.py:2124 SSRF finding survives Lab 4.
 
 
+That screenshot explains it: our range started too late. We’re seeing certificate/key handling, but not the line where allow_localhost is assigned.
+
+Since your earlier search identified line 119, let’s target that exact area with line numbers.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\cli.py | Select-Object -Skip 110 -First 20
+
+We specifically want the code around:
+
+self.allow_localhost = ...
+
+Once we see what args or environment variable controls it, we’ll trace where that argument itself is defined. Then we can make the final call on the helper.py:2124 SSRF finding.
+
+This gives us the key information.
 
 
+
+The screenshot shows:
+
+# load covers from localhost
+self.allow_localhost = args.l or os.environ.get("CALIBRE_LOCALHOST", None)
+
+So allow_localhost is not normally enabled automatically. It is controlled either by the command-line argument args.l or the CALIBRE_LOCALHOST environment variable.
+
+That strongly suggests the raw requests.get() behavior in helper.py is an intentional opt-in mode. When it isn't enabled, the application instead uses cw_advocate.get(), which the code explicitly describes as the SSRF-protected path.
+
+Before we close the finding, let's verify exactly what the -l argument tells the administrator it does.
+
+Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\cli.py -Pattern "add_argument.*-l" -Context 2,4
+
+That should give us enough evidence to make the final classification for CodeQL SSRF #5.
+
+
+
+
+This confirms the intended behavior.
+
+The important line is:
+
+parser.add_argument('-l', action='store_true',
+
+                    help='Allow loading covers from localhost')
+
+Combined with what we already traced:
+
+self.allow_localhost = args.l or os.environ.get("CALIBRE_LOCALHOST", None)
+
+and:
+
+if cli_param.allow_localhost:
+
+    img = requests.get(...)
+    
+elif use_advocate:
+
+    img = cw_advocate.get(...)
+    
+Final classification — helper.py:2124
+
+CodeQL SSRF alert: Deprioritized / intentional opt-in behavior.
+
+The application normally routes remote cover retrieval through its SSRF-protected advocate path. The raw requests.get() branch becomes available when the operator explicitly enables loading covers from localhost using -l or the corresponding environment setting.
+
+So we should not call this a vulnerability based on the static evidence.
+
+CodeQL identified a potential SSRF path in remote cover retrieval. Manual tracing showed that the application normally uses an SSRF-protected request mechanism. Direct requests capable of reaching localhost are enabled only when the operator explicitly activates the -l option (“Allow loading covers from localhost”) or corresponding environment configuration. The finding was therefore classified as intentional opt-in behavior rather than a vulnerability.
+
+
+**SSRF triage complete**
+
+All five py/full-ssrf results have now been reviewed. None currently deserves promotion to our Lab 5 candidate list.
+
+Our more promising CodeQL categories remain reflected XSS, URL redirection, and selected path-injection findings. We already have the Semgrep HTTP_REFERER redirect candidate, so CodeQL's redirect results may corroborate that one rather than create a new candidate.
 
