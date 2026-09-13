@@ -2240,8 +2240,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\cli.py -Pattern "add_
 
 That should give us enough evidence to make the final classification for CodeQL SSRF #5.
 
-
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/6669b1b4d43d9cf7fb94f8495c3e837e936567ad/Screenshot%202026-09-12%20212432.png)
 
 This confirms the intended behavior.
 
