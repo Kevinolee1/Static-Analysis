@@ -1703,7 +1703,7 @@ Line: 779
 
 Rule: py/sql-injection
 
-![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/215454f70664add31092ab59083ae5be8bbed76d/Screenshot%202026-09-10%20095550.png)
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/215454f70664add31092ab59083ae5be8bbed76d/Screenshot%202026-09-10%20095550.png)
 
 Now we need to see the surrounding code and determine where the SQL statement and its input come from.
 
@@ -1717,7 +1717,7 @@ User input → processing/validation → SQL construction → database execution
 
 Then we'll classify this as either false positive, security-relevant but protected, or a candidate for controlled Lab 5 dynamic testing.
 
-![Image alt](![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png))
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png))
 
 This is a real static-analysis candidate, but we should not call it a confirmed SQL injection yet.
 
@@ -1773,7 +1773,7 @@ Run: Get-ChildItem .\targets\Calibre-Web-NextGen -Recurse -File | Select-String 
 
 This searches the entire Calibre-Web NextGen source tree for references to the /ajax/listusers endpoint.We'll use it to determine what the frontend normally supplies for the order parameter before moving to the next CodeQL candidate.
 
-![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f40b50b95599fff1cfa361958d9b0f07ac6ca15e/Screenshot%202026-09-10%20100725.png)
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f40b50b95599fff1cfa361958d9b0f07ac6ca15e/Screenshot%202026-09-10%20100725.png)
 
 The search confirms the endpoint is referenced in cps\static\js\table.js, especially around line 1210. That's the frontend code we need.
 
@@ -1805,7 +1805,7 @@ limit
 
 search
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/d3b2f44559c8307c357bea032eeb95cbeb52a61e/Screenshot%202026-09-10%20101530.png)
 
 That still isn’t the /ajax/listusers table request. We’re close, but instead of guessing line ranges again, let’s jump directly to the exact match.
 
@@ -1813,7 +1813,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -P
 
 That will show the matching line plus 8 lines before and 12 lines after it.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/d3b2f44559c8307c357bea032eeb95cbeb52a61e/Screenshot%202026-09-10%20101530.png)
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/3b135f05778f9913d2f3b0f5058fac3d487a3f05/Screenshot%202026-09-10%20101749.png))
 
 That result tells us the exact string ajax/listusers is not present in table.js. The earlier broad search likely matched just listusers in a different form or generated URL logic.
 
@@ -1823,7 +1823,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\table.js -P
 
 That should reveal the actual table configuration or URL-building logic tied to the admin user list.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/3b135f05778f9913d2f3b0f5058fac3d487a3f05/Screenshot%202026-09-10%20101749.png)
+
 
 Good — that confirms those table.js matches are for editlistusers, not the GET endpoint CodeQL flagged. So the normal /ajax/listusers request is probably wired from the HTML template through Bootstrap Table rather than hard-coded in this JavaScript file.
 
