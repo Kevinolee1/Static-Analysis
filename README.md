@@ -1644,7 +1644,7 @@ $results.runs.results | Select-Object ruleId, level, message
 
 Then we'll classify the CodeQL findings as we did with Semgrep. We only need to investigate findings that could materially change our Lab 4 candidate list; we do not need to chase every scanner warning before starting Lab 5.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png)
+
 
 Now we have the actual CodeQL alert categories. There are a lot of results, but we are not going to investigate hundreds of alerts individually. Many are repeated instances of the same rule. For Lab 4, we want the findings most likely to represent a meaningful security issue.
 
@@ -1699,6 +1699,9 @@ File: cps/admin.py
 Line: 779
 
 Rule: py/sql-injection
+
+
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/41f56e781599c0d0fb5f520da2b343880713e383/Screenshot%202026-09-10%20095906.png))
 
 Now we need to see the surrounding code and determine where the SQL statement and its input come from.
 
