@@ -1841,6 +1841,8 @@ data-sort-order="..."
 
 That should tell us the intended frontend values for sort and order.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/eb8d1bbd2f3fe14cc0923686a9c6feaac5d2107a/Screenshot%202026-09-10%20102320.png)
+
 Perfect. This confirms how /ajax/listusers is connected to the frontend:
 
 <table id="user-table"
@@ -1893,10 +1895,9 @@ Classification: 🟠 Potential SQL Injection / SQL Expression Injection — Dyna
 
 It is not a confirmed vulnerability, and because /ajax/listusers requires @admin_required, even successful SQL manipulation would need a meaningful security impact assessment.
 
-
 CodeQL identified a potential SQL injection path in the administrative user-list endpoint. Manual tracing confirmed that the requested sort column is validated against known database columns, while the request-controlled order parameter is incorporated into a SQLAlchemy text() expression without an equivalent server-side allowlist. The normal frontend uses Bootstrap Table to construct the request, but client-side behavior does not constitute server-side validation. Because the endpoint requires administrator privileges and exploitability has not been demonstrated, the finding remains a candidate for controlled local dynamic testing.
 
-CodeQL SSRF
+**CodeQL SSRF**
 
 Now let's inspect the five full-SSRF candidates instead of spending more time on this one.
 
