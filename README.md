@@ -1695,7 +1695,9 @@ $results.runs.results | Where-Object { $_.ruleId -eq "py/sql-injection" } | ForE
 We isolated the single CodeQL SQL-injection candidate:
 
 File: cps/admin.py
+
 Line: 779
+
 Rule: py/sql-injection
 
 Now we need to see the surrounding code and determine where the SQL statement and its input come from.
@@ -1710,7 +1712,7 @@ User input → processing/validation → SQL construction → database execution
 
 Then we'll classify this as either false positive, security-relevant but protected, or a candidate for controlled Lab 5 dynamic testing.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f40b50b95599fff1cfa361958d9b0f07ac6ca15e/Screenshot%202026-09-10%20100725.png)
 
 This is a real static-analysis candidate, but we should not call it a confirmed SQL injection yet.
 
