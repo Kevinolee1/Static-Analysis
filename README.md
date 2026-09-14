@@ -3164,7 +3164,7 @@ Let's inspect file_move.py, because move/rename logic can be more dangerous if b
 
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\services\file_move.py | Select-Object -First 100
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/836d38c7505fcb506f6eaae4609c82798d6ff04b/Screenshot%202026-09-14%20135821.png)
 
 This file by itself is not a vulnerability. It is only a generic file-copy helper:
 
