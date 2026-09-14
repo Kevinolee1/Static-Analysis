@@ -3547,11 +3547,11 @@ def __init__(self, book, book_format, uncompressed_size, name):
 
 So the next question is exactly where that name value comes from when a book format is uploaded or created.
 
-Run:
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 1435 -First 105
 
 We’re looking for the code that creates or updates db.Data(...) and what value is passed into the name argument.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0bf73647e8110770b537802d3ffe189ac2c13d89/Screenshot%202026-09-14%20162430.png)
 
 This is a strong mitigation for the serve_book() path-injection hypothesis.
 
