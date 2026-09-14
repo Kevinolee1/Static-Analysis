@@ -2560,7 +2560,7 @@ Run this next: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Sele
 
 That should show the route decorators and how selections is populated, which will let us make a much stronger classification for XSS finding #2.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/03854cacf7a61737c0e46d3b38d7863ed29276d0/Screenshot%202026-09-13%20010418.png)
 
 This one is more interesting than the first XSS hit.
 
