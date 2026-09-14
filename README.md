@@ -3683,3 +3683,168 @@ Shelf HTTP_REFERER redirect
 Admin order SQL-expression candidate
 
 No path-injection candidate needs to move forward.
+
+**Finalization**
+
+Create the final shortlist note.
+
+Run: notepad .\notes\lab4-final-shortlist.md
+
+Paste the following into lab4-final-shortlist.md:
+
+
+
+Back in PowerShell, run only this next: Get-Content .\notes\lab4-final-shortlist.md
+
+verify the file saved correctly before creating the full Lab 4 report.
+
+
+
+Run this first: Get-Content .\notes\lab4-final-shortlist.md
+
+We want the top to look like this now:
+
+# Lab 4 — Final Static Analysis Candidate Shortlist
+
+## Project
+Vulnerability Research & CVE Discovery
+
+
+
+Verification passed. The encoding is fixed, the Markdown syntax is correct, all six candidates are present, the deprioritized findings are documented, and we clearly state that none are confirmed vulnerabilities.
+
+Lab 4 Final Shortlist: ✅ VERIFIED
+
+Now we move to the next Lab 4 closeout item: the full Static Analysis Report.
+
+Run: notepad .\reports\lab4-static-analysis-report.md
+
+Paste the following into lab4-static-analysis-report.md. This is the full technical report for the work we actually performed in Lab 4.
+
+
+
+verify it before doing anything else.
+
+Run: Get-Content .\reports\lab4-static-analysis-report.md
+
+
+The report content is complete, but verification caught the same formatting/encoding issue we fixed in the shortlist. The headings have \#, Markdown bold has \*\*, underscores are escaped, and the em dash appears as â€”.
+
+The technical content itself looks correct: all six candidates are present and the report correctly states that none are confirmed vulnerabilities.
+
+Fix it
+
+Run: $p = ".\reports\lab4-static-analysis-report.md"; $c = Get-Content $p -Raw; $c = $c -replace '\\([#*_\&-])','$1' -replace '\\(\d+)\.','$1.' -replace 'â€”','—' -replace '\\\\','\'; Set-Content $p $c -Encoding utf8
+
+Then verify again: Get-Content .\reports\lab4-static-analysis-report.md
+Once it passes, we can mark Lab 4 Static Analysis Report: VERIFIED and move to the evidence index.
+
+
+
+The Lab 4 Static Analysis Report now passes verification. 
+
+The encoding is fixed, Markdown headings and bold formatting are correct, commands display properly, and all six candidates are documented with their dynamic-testing questions.
+
+The report also correctly preserves the important research boundary: six candidates remain unresolved, and no vulnerability or CVE claim is being made yet.
+
+Lab 4 Static Analysis Report:  VERIFIED
+
+We have one more documentation item before the Git commit: the Lab 4 Evidence Index.
+
+Run: notepad .\evidence\lab4-evidence-index.md
+
+Paste this into lab4-evidence-index.md. This will serve as the map showing what evidence was produced during Lab 4 and what each item demonstrates.
+
+
+
+Now we verify the Lab 4 Evidence Index before the Git commit.
+
+Run: Get-Content .\evidence\lab4-evidence-index.md
+
+The content is all there, but the Evidence Index has the same Markdown/encoding problem we fixed in the report. I can see escaped headings like \#, escaped bold formatting like \*\*, double backslashes in paths, and â€” instead of the em dash.
+
+There’s also an extra s at the very end after **Lab 5 — Dynamic Testing**.
+
+Run this one cleanup command: $p = ".\evidence\lab4-evidence-index.md"; $c = Get-Content $p -Raw; $c = $c -replace '\\([#*_\&-])','$1' -replace '\\(\d+)\.','$1.' -replace 'â€”','—' -replace '\\\\','\' -replace '(\*\*Lab 5 — Dynamic Testing\*\*)s\s*$','$1'; Set-Content $p $c -Encoding utf8
+
+Then verify: Get-Content .\evidence\lab4-evidence-index.md
+
+If clean, Lab 4 documentation is finished, and our next step is git status → carefully stage the Lab 4 files → commit.
+
+
+
+That is clean now. The headings, bold formatting, em dashes, paths, candidate classifications, and final Lab 5 — Dynamic Testing section are correct.
+
+The 1\. through 6\. formatting is valid Markdown escaping for numbered lists, so we don't need to change it.
+
+Lab 4 Final Shortlist: VERIFIED
+Lab 4 Static Analysis Report: VERIFIED
+Lab 4 Evidence Index: VERIFIED
+
+Now we're at the Git closeout. We need to be careful because targets\ contains the separately cloned Calibre-Web NextGen repository, so do not run git add ..
+
+Run only: git status --short
+
+
+
+The screenshot shows several untracked items, and we do not want to stage everything.
+
+Leave these alone for now: codeql-db-calibre/, hs_err_pid11772.log, and especially targets/. We want the Lab 4 documentation and evidence only.
+
+Because evidence/ and reports/ are directories, I want to see exactly what's inside them before staging anything.
+
+Run: Get-ChildItem .\evidence, .\reports -File | Select-Object DirectoryName, Name, Length
+
+
+
+That confirms exactly three Lab 4 files in those directories. The SARIF is about 7.6 MB, which is reasonable to preserve as raw CodeQL evidence.
+
+Let's stage only the four Lab 4 artifacts—not targets/, the CodeQL database, or the crash log.
+
+Run: git add .\notes\lab4-final-shortlist.md .\reports\lab4-static-analysis-report.md .\evidence\lab4-evidence-index.md .\evidence\codeql-security-results.sarif
+
+Then run: git status --short
+
+
+
+The staging is exactly what we wanted.
+
+The four green A entries are the only files staged for the Lab 4 commit:
+
+evidence/codeql-security-results.sarif
+
+evidence/lab4-evidence-index.md
+
+notes/lab4-final-shortlist.md
+
+reports/lab4-static-analysis-report.md
+
+The red ?? items—codeql-db-calibre/, hs_err_pid11772.log, and targets/—are not staged, which is correct.
+
+Now commit Lab 4
+
+Run: git commit -m "Complete Lab 4 static analysis and candidate shortlist"
+
+
+
+The commit succeeded. 
+
+Git created commit 27981c9 with the message:
+
+Complete Lab 4 static analysis and candidate shortlist
+
+All four intended artifacts were committed, with 1,525 insertions.
+
+We just need the final repository check. Run: git status --short
+
+Then: git log -1 --oneline
+
+
+
+The Git closeout is clean and correct.
+
+Commit 27981c9 is now the current HEAD on master, and the only remaining items are the intentionally untracked codeql-db-calibre/, crash log, and separate targets/ repository.
+
+Lab 4 Static Analysis: COMPLETE
+
+Completed the full workflow: manual source review plus Semgrep and CodeQL analysis, manual triage of scanner findings, elimination of false positives/mitigated paths, selection of six candidates for runtime validation, creation of the final report and evidence index, preservation of the CodeQL SARIF evidence, and Git documentation. Most importantly, we're maintaining the correct research terminology: these are six vulnerability candidates, not six vulnerabilities. Nothing becomes a confirmed vulnerability until the dynamic evidence supports it.
