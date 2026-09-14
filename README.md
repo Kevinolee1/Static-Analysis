@@ -2319,7 +2319,7 @@ No output usually means the rule ID is slightly different from py/reflective-xss
 
 Reload the SARIF file with: $results = Get-Content .\evidence\codeql-security-results.sarif -Raw | ConvertFrom-Json
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0a389223ed8dc980ca971469b8b4e03c10d83c5e/Screenshot%202026-09-13%20002651.png)
 
 Then verify it loaded: $results.runs.results | Select-Object -First 10 ruleId
 
