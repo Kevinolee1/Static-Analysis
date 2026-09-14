@@ -3367,7 +3367,7 @@ Now the more important callers are around 985, 1040, and 2857. Those are much mo
 
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 950 -First 115
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/9ef085707b5e9c813d53e6d617eec53a60945626/Screenshot%202026-09-14%20141710.png)
 
 this clears two more callers.
 
