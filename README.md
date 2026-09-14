@@ -3268,6 +3268,7 @@ update_dir_structure(..., db_filename=...)
 
 or positional arguments where the fifth argument becomes db_filename. Once we see those callers, we can determine whether this is a real path-traversal candidate or another false positive.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ffa82d41e2a8d3f04f9aaa79c81a6911bb8df37d/Screenshot%202026-09-14%20141108.png)
 
 We found six production call sites in editbooks.py:
 
