@@ -3103,6 +3103,7 @@ Run this next: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | 
 
 Then we’ll inspect the helper definitions and decide whether this path-injection finding survives.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1713cad1403caf0cfd4208ebfe387235a76866c0/Screenshot%202026-09-14%20135443.png)
 
 Perfect. Both helper functions are in cps/editbooks.py:
 
