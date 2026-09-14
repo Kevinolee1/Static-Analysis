@@ -2319,15 +2319,16 @@ No output usually means the rule ID is slightly different from py/reflective-xss
 
 Reload the SARIF file with: $results = Get-Content .\evidence\codeql-security-results.sarif -Raw | ConvertFrom-Json
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0a389223ed8dc980ca971469b8b4e03c10d83c5e/Screenshot%202026-09-13%20002651.png)
-
 Then verify it loaded: $results.runs.results | Select-Object -First 10 ruleId
 
-
+![Image alt](![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0a389223ed8dc980ca971469b8b4e03c10d83c5e/Screenshot%202026-09-13%20002651.png))
 
 $results is loaded correctly again. The screenshot confirms CodeQL results are available, including py/incomplete-url-substring-sanitization and multiple py/path-injection findings.
 
 Now let’s identify the exact XSS rule ID from all results. Run this one-line command: $results.runs.results | Select-Object -ExpandProperty ruleId | Sort-Object -Unique | Where-Object { $_ -match "cross|script|html|xss" }
+
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/4f3b03e56dac0a404a09156ff423045dd8efc355/Screenshot%202026-09-13%20003114.png)
 
 we found the exact rule ID:
 
