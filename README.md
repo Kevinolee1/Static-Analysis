@@ -2421,7 +2421,7 @@ Now let’s inspect that function directly: Get-Content .\targets\Calibre-Web-Ne
 We’ll specifically check whether pathchooser() takes values from request.args, request.form, or another user-controlled 
 source and then places them into an HTML response without escaping. we’ll classify XSS finding #1.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/b525b0f51b5a5bc1122443a85fd45765d4f83afc/Screenshot%202026-09-13%20005240.png)
 
 This is looking much less like a real XSS issue.
 
