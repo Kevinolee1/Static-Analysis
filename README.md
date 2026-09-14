@@ -2927,7 +2927,7 @@ Now we need to inspect its validation logic. Run: Get-Content .\targets\Calibre-
 
 We’re looking for checks such as urlparse(), same-host validation, relative-URL enforcement, or rejection of external schemes/hosts. Then we can classify web.py:2880 before moving to the final redirect finding at web.py:3177.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/de60c4d8cd3ce6847f6e6e40c274e1065387f467/Screenshot%202026-09-14%20132229.png)
 
 This is useful. web.py:2880 looks much safer than a direct open redirect, but I want one more check before we close it.
 
