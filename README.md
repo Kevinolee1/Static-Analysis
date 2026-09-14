@@ -3120,7 +3120,7 @@ Let's inspect both helpers together. Run: Get-Content .\targets\Calibre-Web-Next
 Don't test any filenames yet. First we'll determine from the source whether traversal such as ../ or path separators can 
 actually escape the ingest directory.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/6e5506ffb6fcddac92c72ad9a69a35da47f8daab/Screenshot%202026-09-14%20135613.png)
 
 This path-injection finding is mitigated.
 
