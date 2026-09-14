@@ -3624,7 +3624,7 @@ Run only this next: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py |
 
 We specifically want to trace where file_name comes from before line 2387.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/42d489d339b61c41a3456c879529fc60ce8598dc/Screenshot%202026-09-14%20165233.png)
 
 this keeps the candidate alive for one more check.
 
