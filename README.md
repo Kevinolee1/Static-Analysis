@@ -2640,7 +2640,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\static\js\table.js | Select-O
 We’re specifically looking for what happens after the request to editselectedbooks, such as whether the response is handled with .text(), .html(), innerHTML, a modal, an alert, or parsed as JSON. This should tell us whether XSS finding #2 stays on the Lab 5 candidate list or gets eliminated.
 
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/dd6a077fd89acd04b8b59bdf3ec67a3fb17870d3/Screenshot%202026-09-13%20011346.png)
 
 This keeps the finding alive for one more check.
 
