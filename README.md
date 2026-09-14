@@ -2999,7 +2999,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 
 
 After we classify it, the URL-redirection triage will be complete.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/622ef92adff9694b25ec2bd436d05c4c141f5bcb/Screenshot%202026-09-14%20132735.png)
 
 This last redirect result is also routed through the same get_redirect_location() helper:
 
@@ -3039,4 +3039,4 @@ Possible external redirect
 
 So CodeQL corroborated what Semgrep already found rather than producing a new redirect vulnerability.
 
-Next up should be the selected high-risk path-injection findings. We do not need to review every path-injection alert—just the most security-relevant ones.
+Next up should be the selected highrisk path-injection findings. We do not need to review every path-injection alert—just the most security-relevant ones.
