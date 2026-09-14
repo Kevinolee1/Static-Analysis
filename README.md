@@ -3040,3 +3040,429 @@ Possible external redirect
 So CodeQL corroborated what Semgrep already found rather than producing a new redirect vulnerability.
 
 Next up should be the selected highrisk path-injection findings. We do not need to review every path-injection alert—just the most security-relevant ones.
+
+We’ll do a targeted review, not every py/path-injection hit.
+
+The goal is to find cases where request-controlled path data reaches filesystem operations without a strong boundary check. Highest-value sinks are things like:
+
+open()
+
+os.remove()
+
+shutil.copy / move
+
+os.rename()
+
+send_file()
+
+extract / archive operations
+
+**List the path-injection locations**
+
+Run this one-line command: $results.runs.results | Where-Object { $_.ruleId -eq "py/path-injection" } | ForEach-Object { $_.locations | ForEach-Object { [PSCustomObject]@{ File=$_.physicalLocation.artifactLocation.uri; Line=$_.physicalLocation.region.startLine } } } | Format-Table -AutoSize
+
+Then I’ll group them by file and we’ll inspect only the highest-risk production paths first.
+
+
+
+we have enough to prioritize instead of reviewing all ~60 hits.
+
+The highest-value production groups are:
+
+cps/api/upload.py — upload-controlled filesystem paths
+
+cps/services/file_move.py — move/rename operations
+
+cps/editbooks.py — book/file modification paths
+
+selected cps/helper.py file operations
+
+We can deprioritize admin.py:1754–1804 because those are the same admin-only pathchooser paths we already reviewed, and many helper.py hits are likely shared utility sinks that only become interesting when paired with a reachable source.
+
+Path Injection — first target: cps/api/upload.py
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\api\upload.py | Select-Object -Skip 115 -First 70
+
+We’ll check whether the uploaded filename or another request-controlled value reaches open(), save(), os.path.join(), or a move operation without normalization or confinement to the intended upload directory.
+
+
+
+This api/upload.py finding is worth tracing because the uploaded filename is user-controlled and it reaches filesystem operations, but the important logic is hidden inside these helpers:
+
+_get_ingest_path(uploaded, prefix_parts=["format", book_id])
+
+_save_to_ingest_atomic_rename(uploaded, final_path)
+
+The sidecar file also uses:
+
+final_path + ".cwa.json"
+
+So the real question is whether _get_ingest_path() safely strips path separators, normalizes the filename, and confines the result to the ingest directory.
+
+Run this next: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "def _get_ingest_path|def _save_to_ingest_atomic_rename" | Select-Object Path, LineNumber, Line
+
+Then we’ll inspect the helper definitions and decide whether this path-injection finding survives.
+
+
+Perfect. Both helper functions are in cps/editbooks.py:
+
+_get_ingest_path() — around line 456
+
+_save_to_ingest_atomic_rename() — around line 528
+
+These two functions determine whether the upload path is actually vulnerable or whether CodeQL is following tainted data through properly sanitized code.
+
+Next step
+
+Let's inspect both helpers together. Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 440 -First 115
+
+Don't test any filenames yet. First we'll determine from the source whether traversal such as ../ or path separators can 
+actually escape the ingest directory.
+
+
+
+This path-injection finding is mitigated.
+
+The key protection is here:
+
+base_name = secure_filename(uploaded_file.filename)
+
+secure_filename() sanitizes the user-supplied filename before it becomes part of the filesystem path. Then the application builds the destination underneath the configured ingest directory:
+
+final_name = f"{prefix + '_' if prefix else ''}{unique}_{base_name}"
+
+final_path = os.path.join(ingest_dir, final_name)
+
+For this API route, the prefix values are also controlled:
+
+prefix_parts=["format", book_id]
+
+where book_id is an integer from:
+
+/books/<int:book_id>/formats
+
+The later operations:
+
+uploaded_file.save(tmp_path)
+
+os.replace(tmp_path, final_path)
+
+therefore operate on the sanitized, application-generated path.
+
+Classification
+
+cps/api/upload.py:148–151 → Mitigated / likely CodeQL false positive
+
+CodeQL correctly sees tainted filename data reaching a filesystem operation, but manual review shows the filename passes through secure_filename() before path construction.
+
+So we do not carry this one into Lab 5.
+
+Next high-risk group
+
+Let's inspect file_move.py, because move/rename logic can be more dangerous if book metadata or request-controlled values become directory names.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\services\file_move.py | Select-Object -First 100
+
+
+
+This file by itself is not a vulnerability. It is only a generic file-copy helper:
+
+shutil.copy2(src, dst)
+
+...
+
+shutil.copyfile(src, dst)
+
+The important question is whether either src or dst can be influenced by a user before reaching this helper.
+
+So for now:
+
+cps/services/file_move.py:47–53 → Sink only / needs caller tracing
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "copy_with_metadata_fallback" | Select-Object Path, LineNumber, Line
+
+
+
+Good. The results show the meaningful callers are concentrated in cps/helper.py, especially around lines 1085 and 1229–1280. That matches several of the CodeQL path-injection hits we saw earlier.
+
+Instead of checking each line separately, we'll inspect that whole file-operation section and trace where src and dst originate.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Skip 1020 -First 285
+
+We'll specifically look for whether book title, author, filename, path, or request data can control the source/destination and whether the code uses secure_filename(), safe_join(), realpath(), or another library-boundary check before the copy/move.
+
+
+
+Good. This section is more interesting than file_move.py itself because we can now see where the destination paths are constructed.
+
+There are some protections. New author/title directory names are passed through get_valid_filename() before being joined with the Calibre library path, and renamed filenames are similarly sanitized.
+
+However, one value deserves more tracing:
+
+db_filename
+
+It reaches:
+
+shutil.move(original_filepath, os.path.join(new_path, db_filename))
+
+and, on fallback:
+
+dest_filepath = os.path.join(new_path, db_filename)
+
+copy_with_metadata_fallback(original_filepath, dest_filepath)
+
+Those are genuine filesystem write sinks.
+
+If db_filename can contain ..\, /, an absolute path, or another unsanitized user-controlled value, os.path.join() alone does not enforce that the destination remains under new_path.
+
+So we should not classify this one yet.
+
+Current classification
+
+file_move.py → generic sink, not independently vulnerable
+
+helper.py move_files_on_change() → candidate requiring source tracing
+
+Next we need to find where update_dir_structure_file() is called and what gets passed as db_filename.
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "update_dir_structure_file\(" | Select-Object Path, LineNumber, Line
+
+This could either eliminate several CodeQL findings at once or give us a real path-traversal candidate for Lab 5.
+
+
+
+That search result changes our direction.
+
+There is only one actual definition of update_dir_structure_file() and no normal production caller shown. The other match around line 1626 is inside a return update_dir_structure_file(...) statement, so we need to inspect that wrapper to determine where db_filename originates.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Skip 1580 -First 65
+
+We’re specifically tracing the value passed as db_filename; if it is sanitized before reaching move_files_on_change(), we can eliminate this path-injection cluster.
+
+
+
+This wrapper does not sanitize db_filename; it simply forwards it unchanged:
+
+return update_dir_structure_file(
+
+    book_id,
+    
+    calibre_path,
+    
+    original_filepath,
+    
+    first_author,
+    
+    db_filename
+    
+)
+
+So the candidate is still alive. The next thing we need is the external callers of update_dir_structure(), because that is where db_filename will either become safe or remain user-influenced.
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "update_dir_structure\(" | Select-Object Path, LineNumber, Line
+
+We’re looking for a call shaped roughly like:
+
+update_dir_structure(..., db_filename=...)
+
+or positional arguments where the fifth argument becomes db_filename. Once we see those callers, we can determine whether this is a real path-traversal candidate or another false positive.
+
+
+We found six production call sites in editbooks.py:
+
+351
+
+654
+
+681
+
+985
+
+1040
+
+2857
+
+We don't need to inspect all six at once. The CodeQL path-injection results already pointed directly at editbooks.py:532–537, so let's first inspect the earlier callers and see how the upload filename is handled.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 320 -First 385
+
+That will capture the calls around 351, 654, and 681 plus the surrounding filename handling.
+We're specifically looking for where the value passed as db_filename originates and whether it goes through secure_filename() or get_valid_filename() before reaching the filesystem sink
+
+
+
+This output eliminates the first caller at line 351 from our db_filename concern.
+
+That call is:
+
+helper.update_dir_structure(
+
+    resolved_book_id,
+    
+    config.get_book_path(),
+    
+    input_authors[0]
+)
+
+Only the first three parameters are supplied, so:
+
+original_filepath = None
+
+db_filename = None
+
+That means it follows the metadata rename branch, where new title/author directory names are generated through get_valid_filename(). It does not reach the risky os.path.join(new_path, db_filename) upload branch.
+
+The same is true for the title and author inline-edit calls shown later: they pass only book ID, library path, and author information.
+
+Current status
+
+So far:
+
+editbooks.py:351 → sanitized metadata rename → LOW RISK
+
+edit_book title → sanitized metadata rename → LOW RISK
+
+edit_book author → sanitized metadata rename → LOW RISK
+
+db_filename path → still unresolved
+
+We still need the calls around 654 and 681, because our output is based on Select-Object -Skip 320; its displayed line numbers are relative to the pasted output, not the original source file.
+
+Let's target those exact source lines now: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 625 -First 80
+
+We are getting close to determining whether this candidate survives into Lab 5.
+
+
+
+These two callers are also not using db_filename.
+
+Both calls are metadata-driven renames:
+
+helper.update_dir_structure(book.id, config.get_book_path(), current_author)
+
+and:
+
+helper.update_dir_structure(book.id, config.get_book_path(), input_authors[0])
+
+So they again leave:
+
+original_filepath = None
+
+db_filename = None
+
+That means they stay in the sanitized title/author rename flow and do not reach the upload branch using:
+
+os.path.join(new_path, db_filename)
+Status so far
+
+351  → low risk
+
+654  → low risk
+
+681  → low risk
+
+Now the more important callers are around 985, 1040, and 2857. Those are much more likely to involve actual file uploads or replacement formats.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 950 -First 115
+
+
+
+this clears two more callers.
+
+The call around 985 is another metadata-only rename:
+
+helper.update_dir_structure(
+    edited_books_id,
+    config.get_book_path(),
+    input_authors[0]
+)
+
+And the call around 1040 does the same during normal book editing:
+
+title_author_error = helper.update_dir_structure(
+
+    book.id,
+    
+    config.get_book_path(),
+    
+    input_authors[0]
+    
+)
+
+Neither supplies original_filepath or db_filename, so neither reaches the potentially interesting:
+
+os.path.join(new_path, db_filename)
+
+So our status is now:
+
+351   → low risk / metadata rename
+
+654   → low risk / metadata rename
+
+681   → low risk / metadata rename
+
+985   → low risk / metadata rename
+
+1040  → low risk / metadata rename
+
+2857  → still needs review
+
+That leaves the last caller at ~2857, which is the one most likely to involve an actual uploaded file.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 2815 -First 90
+
+This should let us finish the db_filename trace and decide whether this path-injection candidate survives into Lab 5
+
+
+
+That last caller is also metadata-only:
+
+rename_error = helper.update_dir_structure(
+
+    book.id, config.get_book_path(), first_author)
+
+It does not supply either:
+
+original_filepath
+db_filename
+
+So all six production callers we found use update_dir_structure() only for title/author directory renames.
+
+That means the suspicious branch:
+
+os.path.join(new_path, db_filename)
+
+is not currently reachable through any of those callers.
+
+Classification
+
+`helper.py / file_move.py path-injection cluster → Deprioritized / likely unreachable in current production call flow
+
+The underlying sink is potentially dangerous in isolation, but our caller tracing did not find a production route supplying attacker-controlled db_filename.
+
+So we should not carry this cluster into Lab 5 unless another direct caller appears later.
+
+Next highest-value path-injection group
+
+Let's move to:
+
+cps/web.py
+
+2534
+
+2550
+
+2569
+
+2611
+
+2619
+
+These are attractive because web.py is typically directly route-facing.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 2490 -First 155
+
+This may be the last major path-injection cluster we need before closing this triage category.
+
+
+
