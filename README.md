@@ -2810,7 +2810,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\shelf.py | Select-Object -Ski
 
 If this is the same HTTP_REFERER → redirect() pattern, we'll group the nine shelf findings as one underlying redirect candidate instead of wasting time treating them as nine vulnerabilities.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/55bb08ab2e5c6bb7c343cf29a61fa3bf5373a5bd/Screenshot%202026-09-14%20131239.png)
 
 Yes — shelf.py:188 is the same underlying redirect pattern we already identified:
 
