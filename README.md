@@ -3240,7 +3240,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Sk
 
 We’re specifically tracing the value passed as db_filename; if it is sanitized before reaching move_files_on_change(), we can eliminate this path-injection cluster.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/736226277e64a1ae96284b829393ab5a2842d43f/Screenshot%202026-09-14%20140854.png)
 
 This wrapper does not sanitize db_filename; it simply forwards it unchanged:
 
