@@ -3192,7 +3192,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\helper.py | Select-Object -Sk
 
 We'll specifically look for whether book title, author, filename, path, or request data can control the source/destination and whether the code uses secure_filename(), safe_join(), realpath(), or another library-boundary check before the copy/move.
 
-
+![image alt](https://github.com/Kevinolee1/Static-Analysis/blob/b16d3a539a8716a56112aeb9fdd374fd512dc3ef/README.md)
 
 Good. This section is more interesting than file_move.py itself because we can now see where the destination paths are constructed.
 
