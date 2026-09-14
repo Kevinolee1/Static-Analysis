@@ -2354,7 +2354,7 @@ $results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | For
 
 That will give us the exact CodeQL rule ID so we can pull the 8 reflected-XSS findings correctly.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/bc8c6eb148b62f29960ebd95ac19275942b3f275/Screenshot%202026-09-13%20003548.png)
 
 that confirms the rule exactly:
 
