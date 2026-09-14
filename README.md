@@ -2706,7 +2706,9 @@ Let's inspect the final production CodeQL XSS result: Get-Content .\targets\Cali
 
 This is the last production reflected-XSS result from this CodeQL group.
 
-No problem — that last PowerShell error happened because the sentence:
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/00d4ad45214a4bcda0ce4e995d8bb6062d77a4b4/Screenshot%202026-09-13%20013055.png)
+
+That last PowerShell error happened because the sentence:
 
 This is the last production reflected-XSS result from this CodeQL group.
 
