@@ -3334,7 +3334,7 @@ Let's target those exact source lines now: Get-Content .\targets\Calibre-Web-Nex
 
 We are getting close to determining whether this candidate survives into Lab 5.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/e44ac2e257be20a613b0aa5ff1dbb49306828645/Screenshot%202026-09-14%20141513.png)
 
 These two callers are also not using db_filename.
 
