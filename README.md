@@ -3602,7 +3602,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object 
 
 If the existing-book path also sanitizes the stored name, we can probably close the web.py path-injection cluster entirely.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/602f354fe141d599eb00d4e142045d4ae32a30b4/Screenshot%202026-09-14%20162641.png)
 
 This section confirms the general upload flow, but it does not yet show the existing-book format creation we need.
 
