@@ -2774,7 +2774,7 @@ $results may still be loaded, but since PowerShell sessions can reset, first try
 
 We’ll group the redirects by file and inspect the most promising one first.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/79c422fdde5f24f19d134bf9b23ed87d6c7d2199/Screenshot%202026-09-14%20130957.png)
 
 Excellent. CodeQL found 12 URL-redirection results, and importantly, 9 are in cps/shelf.py. That strongly corroborates the HTTP_REFERER redirect pattern Semgrep already identified.
 
