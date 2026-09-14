@@ -3533,7 +3533,7 @@ Run this: Get-Content .\targets\Calibre-Web-NextGen\cps\db.py | Select-Object -S
 
 Then we’ll inspect exactly how Data.name is defined before tracing where it gets assigned.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/812bdb86c642b220b0350eb99f168cee50bd510d/Screenshot%202026-09-14%20162216.png)
 
 This confirms Data.name is just a plain database string with no validation or sanitization in the model itself:
 
