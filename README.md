@@ -3415,7 +3415,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object 
 
 This should let us finish the db_filename trace and decide whether this path-injection candidate survives into Lab 5
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/b80dda0bf38626af4151f71211fa495d4dcb7f2c/Screenshot%202026-09-14%20141923.png)
 
 That last caller is also metadata-only:
 
