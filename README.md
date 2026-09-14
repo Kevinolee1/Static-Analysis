@@ -2767,3 +2767,276 @@ readingservices.py:150 → likely proxy behavior / false positive
 That means the CodeQL reflected-XSS category does not currently give us a strong new Lab 5 candidate.
 
 Next best category is URL redirection, especially because Semgrep already found the HTTP_REFERER redirects in shelf.py. We can use CodeQL to see whether it corroborates that same path or finds something new.
+
+**Extract locations**
+
+$results may still be loaded, but since PowerShell sessions can reset, first try this one-line command: $results.runs.results | Where-Object { $_.ruleId -eq "py/url-redirection" } | ForEach-Object { $_.locations | ForEach-Object { [PSCustomObject]@{ File=$_.physicalLocation.artifactLocation.uri; Line=$_.physicalLocation.region.startLine } } } | Format-Table -AutoSize
+
+We’ll group the redirects by file and inspect the most promising one first.
+
+
+
+Excellent. CodeQL found 12 URL-redirection results, and importantly, 9 are in cps/shelf.py. That strongly corroborates the HTTP_REFERER redirect pattern Semgrep already identified.
+
+The findings group into:
+
+cps/cwa_functions.py   197     1
+
+cps/shelf.py           188     9 total in this file
+
+                       359
+                       
+                       375
+                       
+                       394
+                       
+                       405
+                       
+                       412
+                       
+                       487
+                       
+                       573
+                       
+                       586
+                       
+cps/web.py             2880    2
+
+                       3177
+
+Rather than re-review all nine shelf.py locations individually, we already know several use HTTP_REFERER. We should first inspect the one new shelf.py:188 location to see whether it belongs to the same pattern.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\shelf.py | Select-Object -Skip 165 -First 45
+
+If this is the same HTTP_REFERER → redirect() pattern, we'll group the nine shelf findings as one underlying redirect candidate instead of wasting time treating them as nine vulnerabilities.
+
+
+
+Yes — shelf.py:188 is the same underlying redirect pattern we already identified:
+
+return redirect(request.environ.get("HTTP_REFERER") or url_for('web.index'))
+
+So CodeQL and Semgrep are corroborating each other here.
+
+Current classification for the 9 shelf.py findings
+
+We should treat them as one underlying candidate, not nine separate vulnerabilities:
+
+Client-controlled Referer header
+
+        ↓
+        
+request.environ["HTTP_REFERER"]
+
+        ↓
+        
+redirect(...)
+
+        ↓
+        
+Possible external redirect
+
+This remains a valid Lab 5 dynamic-testing candidate because there is no visible same-origin or trusted-destination validation before the redirect.
+
+Now let’s inspect the different redirect result in:
+
+cps/cwa_functions.py:197
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\cwa_functions.py | Select-Object -Skip 170 -First 55
+
+Then we’ll determine whether it is a new redirect candidate or another false positive.
+
+
+
+This cwa_functions.py:197 finding looks mitigated, not like the shelf.py pattern.
+
+The route does use a client-controlled referrer:
+
+target = request.referrer or url_for("web.index")
+
+but it then parses the URL and explicitly rejects a different host:
+
+ref_p = urlparse(target)
+
+if ref_p.netloc and ref_p.netloc != request.host:
+
+    target = url_for("web.index")
+
+So the flow is:
+
+Referer
+
+  ↓
+  
+urlparse()
+
+  ↓
+  
+Different host? → replace with internal index
+
+  ↓
+  
+redirect(target)
+Classification
+
+cps/cwa_functions.py:197 → Mitigated / likely CodeQL false positive
+
+Unlike shelf.py, this route actually performs a same-host validation before redirecting. I would not carry this one into Lab 5 based on the static evidence.
+
+There is a theoretical dependency on correct Host handling, but that would be a separate Host-header/trusted-host configuration issue, not enough to promote this redirect finding by itself.
+
+So our redirect triage is currently:
+
+shelf.py (9 hits)       → 🟠 Valid dynamic-testing candidate
+
+cwa_functions.py:197    → ✅ Mitigated / deprioritize
+
+web.py:2880             → Next
+
+web.py:3177             → Next
+
+Now inspect both web.py findings together: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 2850 -First 60
+
+We'll classify web.py:2880, then inspect 3177.
+
+
+
+This web.py:2880 result is not enough by itself to call an open redirect, because the redirect goes through a helper:
+
+return redirect(
+
+    get_redirect_location(request.form.get('next', None), "web.index")
+    
+)
+
+That is very different from the direct HTTP_REFERER → redirect() flow in shelf.py.
+
+The key question is whether get_redirect_location() validates next and forces it to a safe internal destination.
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "def get_redirect_location" | Select-Object Path, LineNumber, Line
+
+If that helper enforces same-host or relative-only redirects, then web.py:2880 is likely a false positive / mitigated finding.
+
+
+
+We found the helper:
+
+cps/redirect.py:52 → def get_redirect_location(...)
+
+Now we need to inspect its validation logic. Run: Get-Content .\targets\Calibre-Web-NextGen\cps\redirect.py | Select-Object -Skip 35 -First 60
+
+We’re looking for checks such as urlparse(), same-host validation, relative-URL enforcement, or rejection of external schemes/hosts. Then we can classify web.py:2880 before moving to the final redirect finding at web.py:3177.
+
+
+
+This is useful. web.py:2880 looks much safer than a direct open redirect, but I want one more check before we close it.
+
+get_redirect_location() does not directly call the is_safe_url() helper shown above it. Instead, it appears to validate the requested target against Flask’s registered routes:
+
+target = next_ or url_for(endpoint, **values)
+
+adapter = current_app.url_map.bind(urlparse(request.host_url).netloc)
+
+if not len(adapter.allowed_methods(
+
+        remove_prefix(target, request.environ.get('HTTP_X_SCRIPT_NAME', "")))):
+        
+    target = url_for(endpoint, **values)
+
+return target
+
+So the apparent logic is:
+
+User-controlled next
+
+      ↓
+      
+Check whether it corresponds to an application route
+
+      ↓
+      
+Unknown target → replace with internal default
+
+      ↓
+      
+redirect(...)
+
+That would likely block a normal external URL, but because CodeQL flagged it and the file also contains an unused is_safe_url() helper, I want to see the exact complete function before classifying it.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\redirect.py | Select-Object -First 80
+
+Then we’ll make the final call on web.py:2880 and move to the last URL-redirection result, web.py:3177.
+
+
+
+This is enough to classify web.py:2880.
+
+get_redirect_location() does not simply trust next. It binds Flask’s route map to the current host and checks whether the target resolves to an allowed application route:
+
+target = next or url_for(endpoint, **values)
+
+adapter = current_app.url_map.bind(urlparse(request.host_url).netloc)
+
+if not len(adapter.allowed_methods
+
+        remove_prefix(target, request.environ.get('HTTP_X_SCRIPT_NAME', "")))):
+        
+    target = url_for(endpoint, **values)
+
+So a normal external URL should fail the route lookup and fall back to the internal endpoint.
+
+Classification
+
+web.py:2880 → Mitigated / likely false positive
+
+I would not move this one into Lab 5.
+
+That leaves one final URL-redirection result:
+
+cps/web.py:3177
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 3145 -First 60
+
+After we classify it, the URL-redirection triage will be complete.
+
+
+
+This last redirect result is also routed through the same get_redirect_location() helper:
+
+if config.config_anonbrowse:
+
+    location = get_redirect_location(request.args.get('next', None), "web.login")
+
+and we already verified that helper checks whether the target maps to an allowed application route before returning it.
+
+So:
+
+web.py:3177 → Mitigated / likely false positive
+
+That means the URL-redirection triage is complete.
+
+Final result for this category:
+
+shelf.py (9 findings)       → 🟠 Valid Lab 5 candidate
+
+cwa_functions.py:197        → Mitigated
+
+web.py:2880                 → Mitigated
+
+web.py:3177                 → Mitigated
+
+The important surviving issue is still the shelf pattern:
+
+HTTP_REFERER
+
+   ↓
+   
+redirect(...)
+
+   ↓
+   
+Possible external redirect
+
+So CodeQL corroborated what Semgrep already found rather than producing a new redirect vulnerability.
+
+Next up should be the selected high-risk path-injection findings. We do not need to review every path-injection alert—just the most security-relevant ones.
