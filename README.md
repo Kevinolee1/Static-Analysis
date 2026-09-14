@@ -2899,7 +2899,7 @@ Now inspect both web.py findings together: Get-Content .\targets\Calibre-Web-Nex
 
 We'll classify web.py:2880, then inspect 3177.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/7e3616e521b7e5b278a1e818cfc37930c75e3a96/Screenshot%202026-09-14%20131811.png)
 
 This web.py:2880 result is not enough by itself to call an open redirect, because the redirect goes through a helper:
 
