@@ -3466,5 +3466,5 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\web.py | Select-Object -Skip 
 
 This may be the last major path-injection cluster we need before closing this triage category.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a8db9ac6403a901497f94a1f9e044cc0c90f97e8/Screenshot%202026-09-14%20142217.png)
 
