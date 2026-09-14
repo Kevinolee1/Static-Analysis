@@ -2313,6 +2313,8 @@ Valid dynamic-testing candidate
 
 We’ll keep this focused and only carry forward findings that survive manual review.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/b836af64d2a227cf2fbcd80affea19ff1985fbda/Screenshot%202026-09-13%20001806.png)
+
 No output usually means the rule ID is slightly different from py/reflective-xss, even though the summary described it as reflected XSS.
 
 Reload the SARIF file with: $results = Get-Content .\evidence\codeql-security-results.sarif -Raw | ConvertFrom-Json
