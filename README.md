@@ -2917,7 +2917,7 @@ Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-Str
 
 If that helper enforces same-host or relative-only redirects, then web.py:2880 is likely a false positive / mitigated finding.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/4daa75a073080716fea0248ded958b8f7dcb005a/Screenshot%202026-09-14%20132103.png)
 
 We found the helper:
 
