@@ -3063,7 +3063,7 @@ Run this one-line command: $results.runs.results | Where-Object { $_.ruleId -eq 
 
 Then I’ll group them by file and we’ll inspect only the highest-risk production paths first.
 
-
+!{image alt](https://github.com/Kevinolee1/Static-Analysis/blob/31a35e9a598988c4ed46575dd81763fd14f80741/Screenshot%202026-09-14%20134945.png)
 
 we have enough to prioritize instead of reviewing all ~60 hits.
 
