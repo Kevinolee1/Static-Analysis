@@ -3182,7 +3182,7 @@ cps/services/file_move.py:47–53 → Sink only / needs caller tracing
 
 Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "copy_with_metadata_fallback" | Select-Object Path, LineNumber, Line
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/62bfef347427c30785f07bb43a3d51e476e6d99a/Screenshot%202026-09-14%20140041.png)
 
 Good. The results show the meaningful callers are concentrated in cps/helper.py, especially around lines 1085 and 1229–1280. That matches several of the CodeQL path-injection hits we saw earlier.
 
