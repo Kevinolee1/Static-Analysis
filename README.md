@@ -3085,7 +3085,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\api\upload.py | Select-Object
 
 We’ll check whether the uploaded filename or another request-controlled value reaches open(), save(), os.path.join(), or a move operation without normalization or confinement to the intended upload directory.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0f541f8dbe1259209499c4dd8a4ff87e38e04795/Screenshot%202026-09-14%20135225.png)
 
 This api/upload.py finding is worth tracing because the uploaded filename is user-controlled and it reaches filesystem operations, but the important logic is hidden inside these helpers:
 
