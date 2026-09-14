@@ -2334,7 +2334,7 @@ we found the exact rule ID:
 
 py/reflective-xss
 
-Now extract all reflected XSS locations with:
+Now extract all reflected XSS locations with: 
 
 $results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object {
 
@@ -2354,7 +2354,7 @@ $results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | For
 
 That will give us the exact CodeQL rule ID so we can pull the 8 reflected-XSS findings correctly.
 
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0920bb77bd5b43cb8e67f706d54167c829d24a7c/Screenshot%202026-09-13%20003749.png)
+
 
 that confirms the rule exactly:
 
@@ -2364,26 +2364,11 @@ Description:
 
 Reflected server-side cross-site scripting
 
-Now pull the actual file locations. Use this as a single line to avoid the >> continuation issue: 
-
-$results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object {
-
-    $_.locations | ForEach-Object {
-    
-        [PSCustomObject]@{
-        
-            File = $_.physicalLocation.artifactLocation.uri
-            
-            Line = $_.physicalLocation.region.startLine
-            
-        }
-        
-    }
-    
-} | Format-Table -AutoSize
+Now pull the actual file locations. Use this as a single line to avoid the >> continuation issue: $results.runs.results | Where-Object { $_.ruleId -eq "py/reflective-xss" } | ForEach-Object { $_.locations | ForEach-Object { [PSCustomObject]@{ File=$_.physicalLocation.artifactLocation.uri; Line=$_.physicalLocation.region.startLine } } } | Format-Table -AutoSize
 
 we’ll inspect the XSS findings one group at a time and decide which, if any, survive into Lab 5.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0920bb77bd5b43cb8e67f706d54167c829d24a7c/Screenshot%202026-09-13%20003749.png)
 
 
 now we have the 8 reflected-XSS locations.
