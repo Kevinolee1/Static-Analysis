@@ -3520,7 +3520,7 @@ Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-Str
 
 If data.name is consistently generated from sanitized metadata, we can probably close this entire web.py path-injection cluster. If not, this could become a local file-read candidate for Lab 5.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/356e834e2c4144397fbff7ae69abf77b763300f6/Screenshot%202026-09-14%20161801.png)
 
 That search was too broad, but it did give us the two places we actually care about:
 
