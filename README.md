@@ -3230,7 +3230,7 @@ Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-Str
 
 This could either eliminate several CodeQL findings at once or give us a real path-traversal candidate for Lab 5.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0bdb89200aa692fb849cacbc840eb6c8ce5cd63d/Screenshot%202026-09-14%20140735.png)
 
 That search result changes our direction.
 
