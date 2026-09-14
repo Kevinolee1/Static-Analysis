@@ -3291,7 +3291,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object 
 That will capture the calls around 351, 654, and 681 plus the surrounding filename handling.
 We're specifically looking for where the value passed as db_filename originates and whether it goes through secure_filename() or get_valid_filename() before reaching the filesystem sink
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/290c8b874168d7a9f4cd63ab538899052bc0f3d2/Screenshot%202026-09-14%20141305.png)
 
 This output eliminates the first caller at line 351 from our db_filename concern.
 
