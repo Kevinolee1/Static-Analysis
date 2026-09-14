@@ -3468,3 +3468,218 @@ This may be the last major path-injection cluster we need before closing this tr
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/a8db9ac6403a901497f94a1f9e044cc0c90f97e8/Screenshot%202026-09-14%20142217.png)
 
+This web.py cluster is interesting, but it is not yet a confirmed path-injection issue.
+
+The route itself only takes:
+
+/show/<int:book_id>/<book_format>
+
+and access to the book is checked through:
+
+book = calibre_db.get_filtered_book(book_id, allow_show_hidden=True)
+
+The filesystem paths are then built primarily from two database values:
+
+book.path
+
+data.name
+
+For example:
+
+original_path = os.path.join(
+
+    config.get_book_path(),
+    
+    book.path,
+    
+    data.name + "." + book_format
+    
+)
+
+and:
+
+open(os.path.join(
+
+    config.get_book_path(),
+    
+    book.path,
+    
+    data.name + "." + book_format
+    
+), "rb")
+
+So the important question is now:
+
+Can an attacker cause book.path or data.name to contain traversal components such as ../?
+
+We already saw that normal title/author renames use get_valid_filename(), which makes book.path look substantially safer. But we still need to verify how the format filename data.name is populated.
+
+Next trace
+
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "\.name\s*=|Data\(" | Where-Object { $_.Line -match "name|Data" } | Select-Object Path, LineNumber, Line
+
+If data.name is consistently generated from sanitized metadata, we can probably close this entire web.py path-injection cluster. If not, this could become a local file-read candidate for Lab 5.
+
+
+
+That search was too broad, but it did give us the two places we actually care about:
+
+cps/db.py around line 633 — class Data
+cps/editbooks.py around lines 1455–1521 — likely where Data(...) records are created or updated
+
+Let’s narrow it down.
+
+Run this: Get-Content .\targets\Calibre-Web-NextGen\cps\db.py | Select-Object -Skip 625 -First 45
+
+Then we’ll inspect exactly how Data.name is defined before tracing where it gets assigned.
+
+
+
+This confirms Data.name is just a plain database string with no validation or sanitization in the model itself:
+
+name = Column(String, nullable=False)
+
+and the constructor accepts whatever is passed in:
+
+def __init__(self, book, book_format, uncompressed_size, name):
+    ...
+    self.name = name
+
+So the next question is exactly where that name value comes from when a book format is uploaded or created.
+
+Run:
+
+We’re looking for the code that creates or updates db.Data(...) and what value is passed into the name argument.
+
+
+
+This is a strong mitigation for the serve_book() path-injection hypothesis.
+
+For a newly uploaded book, the database filename comes from:
+
+title_dir = helper.get_valid_filename(title, chars=96)
+
+and then:
+
+db_data = db.Data(
+    db_book,
+    meta.extension.upper()[1:],
+    file_size,
+    title_dir
+)
+
+So in this upload path:
+
+meta.title
+
+   ↓
+   
+get_valid_filename(...)
+
+   ↓
+   
+title_dir
+
+   ↓
+   
+Data.name
+
+   ↓
+   
+serve_book()
+
+That means data.name is not being populated directly from the raw uploaded filename here. It is derived from a sanitized title.
+
+Current classification
+
+For new book uploads:
+
+`web.py serve_book path-injection → mitigated
+
+We should still check the function immediately below because it may handle adding/replacing formats on an existing book, and that could populate Data.name differently.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 1535 -First 125
+
+If the existing-book path also sanitizes the stored name, we can probably close the web.py path-injection cluster entirely.
+
+
+
+This section confirms the general upload flow, but it does not yet show the existing-book format creation we need.
+
+The next best step is to find every place db.Data(...) is created.
+
+Run:
+
+That will let us trace all assignments to Data.name and decide whether the serve_book() path-injection candidate can be closed.
+
+
+
+This narrows the trace to five db.Data() creation paths. The one we need to inspect first is editbooks.py:2387, because it directly passes a variable named file_name into Data.name:
+
+db_format = db.Data(book_id, file_ext.upper(), file_size, file_name)
+
+That is more interesting than the upload path we already cleared. If file_name can originate from a user-controlled filename without sanitization, it could reach serve_book() later.
+
+Run only this next: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 2340 -First 75
+
+We specifically want to trace where file_name comes from before line 2387.
+
+
+
+this keeps the candidate alive for one more check.
+
+At line 2387, file_name is written directly into Data.name:
+
+db_format = db.Data(book_id, file_ext.upper(), file_size, file_name)
+
+We now need to see how file_name and saved_filename are built a little earlier in the same function.
+
+Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 2290 -First 55
+
+The key question is whether file_name is sanitized before it reaches the database.
+
+
+
+This gives us the answer we needed. We can close the web.py path-injection candidate as mitigated / not a viable remote vulnerability in the traced application flow.
+
+Here, file_name does not come from the uploaded filename:
+
+file_name = book.path.rsplit('/', 1)[-1]
+
+The uploaded filename is only used to determine the extension:
+
+file_ext = current_filename.rsplit('.', 1)[-1].lower()
+
+Then the destination is built from the existing database-controlled book path:
+
+filepath = os.path.normpath(os.path.join(config.get_book_path(), book.path))
+
+saved_filename = os.path.join(filepath, file_name + '.' + file_ext)
+
+Combined with what we already traced, normal application paths construct book.path from sanitized author/title values using get_valid_filename(). The new-upload flow likewise stores sanitized title_dir as Data.name.
+
+Final path-injection classification
+
+CodeQL web.py path-injection cluster: Mitigated / likely false positive
+
+Reason: filesystem paths are ultimately derived from sanitized application/database values rather than an unsanitized request-controlled filename. An attacker with normal upload permissions cannot directly supply traversal sequences into Data.name through this route.
+
+The only caveat would be a library/database that was already maliciously modified outside the application, but that is a different trust model and does not establish a remotely exploitable Calibre-Web NextGen vulnerability.
+
+That means our selected path-injection review is complete.
+
+Our Lab 5 shortlist is now:
+
+Read-status object authorization
+
+Archive-status object authorization
+
+OAuth/OIDC account matching
+
+LDAP fallback authentication behavior
+
+Shelf HTTP_REFERER redirect
+
+Admin order SQL-expression candidate
+
+No path-injection candidate needs to move forward.
