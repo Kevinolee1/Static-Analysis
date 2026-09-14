@@ -2846,7 +2846,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\cwa_functions.py | Select-Obj
 
 Then we’ll determine whether it is a new redirect candidate or another false positive.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/68943294d6ce39f45008487071a5975c4f71bbec/Screenshot%202026-09-14%20131522.png)
 
 This cwa_functions.py:197 finding looks mitigated, not like the shelf.py pattern.
 
