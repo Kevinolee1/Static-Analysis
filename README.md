@@ -2967,7 +2967,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\redirect.py | Select-Object -
 
 Then we’ll make the final call on web.py:2880 and move to the last URL-redirection result, web.py:3177.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/c848aa85955ca86af44544c0a7ea76bde46b7ac0/Screenshot%202026-09-14%20132503.png)
 
 This is enough to classify web.py:2880.
 
