@@ -2412,7 +2412,7 @@ Run this: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Selec
 If pathchooser() renders user-controlled path data into HTML without escaping, this one could survive. If it returns 
 escaped JSON or uses Jinja escaping correctly, we’ll close it as a false positive or mitigated finding.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/75eaf381d5338e4ff20a2854b4a2cbfbdb652460/Screenshot%202026-09-13%20004430.png)
 
 pathchooser() is in the same file at admin.py:1748.
 
