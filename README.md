@@ -2660,7 +2660,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\static\js\*.js -Patte
 
 If that function uses safe text insertion, we can close XSS finding #2 as a false positive. If it uses .html() or innerHTML, we’ll inspect whether any attacker-controlled content can actually reach booTitles.message.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/2fd86dab3bff85ab761ef120dccfa87a89c32187/Screenshot%202026-09-13%20011640.png)
 
 Good catch. This function does use HTML insertion, specifically:
 
