@@ -2449,7 +2449,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\admin.py | Select-Object -Ski
 
 Then we can make the final classification for XSS finding #1
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/bddc31eb3ab81b01a522fea1150877381b881662/Screenshot%202026-09-13%20005519.png)
 
 We have enough to classify XSS finding #1 (cps/admin.py:1432).
 
