@@ -3608,11 +3608,11 @@ This section confirms the general upload flow, but it does not yet show the exis
 
 The next best step is to find every place db.Data(...) is created.
 
-Run:
+Run: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -Filter *.py | Select-String -Pattern "db\.Data\("
 
 That will let us trace all assignments to Data.name and decide whether the serve_book() path-injection candidate can be closed.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ee2adddb947c2acf0db10f9d642b3bbc16502246/Screenshot%202026-09-14%20162816.png)
 
 This narrows the trace to five db.Data() creation paths. The one we need to inspect first is editbooks.py:2387, because it directly passes a variable named file_name into Data.name:
 
