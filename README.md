@@ -2625,7 +2625,7 @@ It survives static review better than the pathchooser finding.
 
 Now find the frontend code that calls this endpoint: Get-ChildItem .\targets\Calibre-Web-NextGen\cps -Recurse -File | Select-String -Pattern "editselectedbooks" | Select-Object Path, LineNumber, Line
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/29dcbbba54895be556d01574bfe67519f9ca531d/Screenshot%202026-09-13%20011113.png)
 
 we found the frontend reference at:
 
