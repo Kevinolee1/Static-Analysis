@@ -3638,7 +3638,7 @@ Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object 
 
 The key question is whether file_name is sanitized before it reaches the database.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ed905e4593454907f88401e16fa40a50283c61eb/Screenshot%202026-09-14%20163114.png)
 
 This gives us the answer we needed. We can close the web.py path-injection candidate as mitigated / not a viable remote vulnerability in the traced application flow.
 
