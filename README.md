@@ -2524,7 +2524,7 @@ Run: Select-String -Path .\targets\Calibre-Web-NextGen\cps\editbooks.py -Pattern
 
 We can see whether the reflected-XSS finding at editbooks.py:417 is coming from user-controlled metadata, exception text, or a safe value
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/ebd65e74936930a12f6db76786ecc914fedd4ca4/Screenshot%202026-09-13%20010133.png)
 
 this gives us the key data-flow detail.
 
