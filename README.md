@@ -2496,7 +2496,7 @@ cps/editbooks.py:417
 
 Run: Get-Content .\targets\Calibre-Web-NextGen\cps\editbooks.py | Select-Object -Skip 385 -First 65
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/951da4319186e7aea2629a0acddc9a37bfa21c8d/Screenshot%202026-09-13%20005822.png)
 
 This one looks more plausible than the path chooser, because the CodeQL hit is inside a response that can return structured error data:
 
