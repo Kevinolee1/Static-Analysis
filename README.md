@@ -3708,16 +3708,20 @@ Back in PowerShell, run only this next: Get-Content .\notes\lab4-final-shortlist
 
 verify the file saved correctly before creating the full Lab 4 report.
 
-
-![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/83da2794da13d514535053fcc1267caef5a51ecd/Screenshot%202026-09-14%20171614.png)
-
 We want the top to look like this now:
 
-# Lab 4 — Final Static Analysis Candidate Shortlist
+Lab 4 — Final Static Analysis Candidate Shortlist
 
-## Project
+Project
 Vulnerability Research & CVE Discovery
 
+and not:
+
+\# Lab 4 â€” ...
+
+Once that is clean, we can mark the final shortlist file verified and move to the Lab 4 report.
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/3649a5c70f447e78eac8f52d030f6f4e2ec08e2a/Screenshot%202026-09-14%20172107.png)
 
 Verification passed. The encoding is fixed, the Markdown syntax is correct, all six candidates are present, the deprioritized findings are documented, and we clearly state that none are confirmed vulnerabilities.
 
