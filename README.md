@@ -3699,6 +3699,11 @@ Paste the following into lab4-final-shortlist.md:
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/4b58b8c4adaafb96de4eba9ec69c29af7ad402ad/Screenshot%202026-09-14%20170920.png)
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1c9128550d9db74802f4dc6e917511d16fa5f378/Screenshot%202026-09-14%20170936.png)
+
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/9a26750d6c433ebf43927b9788f5affbde30f15f/Screenshot%202026-09-14%20171040.png)
+
+Press Ctrl+S to save 
+
 Back in PowerShell, run only this next: Get-Content .\notes\lab4-final-shortlist.md
 
 verify the file saved correctly before creating the full Lab 4 report.
