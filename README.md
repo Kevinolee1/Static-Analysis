@@ -3825,7 +3825,7 @@ Because evidence/ and reports/ are directories, I want to see exactly what's ins
 
 Run: Get-ChildItem .\evidence, .\reports -File | Select-Object DirectoryName, Name, Length
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/6b4bde4e9052243608a0669a625895e53548c4a3/Screenshot%202026-09-14%20175144.png)
 
 That confirms exactly three Lab 4 files in those directories. The SARIF is about 7.6 MB, which is reasonable to preserve as raw CodeQL evidence.
 
