@@ -3733,7 +3733,7 @@ Run: notepad .\reports\lab4-static-analysis-report.md
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/49e21a1dddd1e558c10bcd25939318f0b2a40505/Screenshot%202026-09-14%20170149.png)
 
-Paste the following into lab4-static-analysis-report.md. This is the full technical report for the work we actually performed in Lab 4.
+Paste the following into lab4-static-analysis-report.md in the notepad. This is the full technical report for the work we actually performed in Lab 4.
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/2dfcd71332738fdc8a3f3ca4d3206a3d3c85eb31/Screenshot%202026-09-14%20172943.png)
 
@@ -3741,6 +3741,7 @@ verify it before doing anything else.
 
 Run: Get-Content .\reports\lab4-static-analysis-report.md
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/b9964cca99d4c958b91d2e0389b503280663f0c6/Screenshot%202026-09-14%20173246.png)
 
 The report content is complete, but verification caught the same formatting/encoding issue we fixed in the shortlist. The headings have \#, Markdown bold has \*\*, underscores are escaped, and the em dash appears as â€”.
 
