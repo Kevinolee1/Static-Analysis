@@ -3782,6 +3782,8 @@ Now we verify the Lab 4 Evidence Index before the Git commit.
 
 Run: Get-Content .\evidence\lab4-evidence-index.md
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/c5e4509317073ab1a9024b41f3cbdcbccb94aae9/Screenshot%202026-09-14%20174520.png)
+
 The content is all there, but the Evidence Index has the same Markdown/encoding problem we fixed in the report. I can see escaped headings like \#, escaped bold formatting like \*\*, double backslashes in paths, and â€” instead of the em dash.
 
 There’s also an extra s at the very end after **Lab 5 — Dynamic Testing**.
