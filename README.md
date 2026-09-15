@@ -3835,7 +3835,7 @@ Run: git add .\notes\lab4-final-shortlist.md .\reports\lab4-static-analysis-repo
 
 Then run: git status --short
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/da4bda0ee5bffd0d5e055fa07dc37fb25fc66832/Screenshot%202026-09-14%20175321.png)
 
 The staging is exactly what we wanted.
 
