@@ -3754,7 +3754,7 @@ Run: $p = ".\reports\lab4-static-analysis-report.md"; $c = Get-Content $p -Raw; 
 Then verify again: Get-Content .\reports\lab4-static-analysis-report.md
 Once it passes, we can mark Lab 4 Static Analysis Report: VERIFIED and move to the evidence index.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/1062e5395f53f1f56519c0623255b3015620e7d5/Screenshot%202026-09-14%20173530.png)
 
 The Lab 4 Static Analysis Report now passes verification. 
 
