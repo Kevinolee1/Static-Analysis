@@ -3772,6 +3772,7 @@ Run: notepad .\evidence\lab4-evidence-index.md
 
 Paste this into lab4-evidence-index.md. This will serve as the map showing what evidence was produced during Lab 4 and what each item demonstrates.
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/08f3cc0c4b4f77120c93556045418916dfb56e56/Screenshot%202026-09-14%20174245.png)
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/4e6749477890a08073cbe6b8b6998d61f6864531/Screenshot%202026-09-14%20174205.png)
 
