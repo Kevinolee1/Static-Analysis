@@ -3731,6 +3731,8 @@ Now we move to the next Lab 4 closeout item: the full Static Analysis Report.
 
 Run: notepad .\reports\lab4-static-analysis-report.md
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/49e21a1dddd1e558c10bcd25939318f0b2a40505/Screenshot%202026-09-14%20170149.png)
+
 Paste the following into lab4-static-analysis-report.md. This is the full technical report for the work we actually performed in Lab 4.
 
 
