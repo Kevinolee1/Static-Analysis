@@ -3690,6 +3690,8 @@ Create the final shortlist note.
 
 Run: notepad .\notes\lab4-final-shortlist.md
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/0c1b3d0fe818090bea160fc5e4757cfbe409be99/Screenshot%202026-09-14%20170149.png)
+
 Paste the following into lab4-final-shortlist.md:
 
 
