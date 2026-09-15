@@ -3815,7 +3815,7 @@ Now we're at the Git closeout. We need to be careful because targets\ contains t
 
 Run only: git status --short
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/26bdd36afe5b7e77c3ebbfb110fd91acd111c4c8/Screenshot%202026-09-14%20175005.png)
 
 The screenshot shows several untracked items, and we do not want to stage everything.
 
