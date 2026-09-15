@@ -3735,7 +3735,7 @@ Run: notepad .\reports\lab4-static-analysis-report.md
 
 Paste the following into lab4-static-analysis-report.md. This is the full technical report for the work we actually performed in Lab 4.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/2dfcd71332738fdc8a3f3ca4d3206a3d3c85eb31/Screenshot%202026-09-14%20172943.png)
 
 verify it before doing anything else.
 
