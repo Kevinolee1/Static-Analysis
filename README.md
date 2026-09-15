@@ -3562,10 +3562,15 @@ title_dir = helper.get_valid_filename(title, chars=96)
 and then:
 
 db_data = db.Data(
+
     db_book,
+    
     meta.extension.upper()[1:],
+    
     file_size,
+    
     title_dir
+    
 )
 
 So in this upload path:
@@ -3794,14 +3799,16 @@ Then verify: Get-Content .\evidence\lab4-evidence-index.md
 
 If clean, Lab 4 documentation is finished, and our next step is git status → carefully stage the Lab 4 files → commit.
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/f75e0d72665770863881fed5cccc0986f818f595/Screenshot%202026-09-14%20174749.png)
 
 That is clean now. The headings, bold formatting, em dashes, paths, candidate classifications, and final Lab 5 — Dynamic Testing section are correct.
 
 The 1\. through 6\. formatting is valid Markdown escaping for numbered lists, so we don't need to change it.
 
 Lab 4 Final Shortlist: VERIFIED
+
 Lab 4 Static Analysis Report: VERIFIED
+
 Lab 4 Evidence Index: VERIFIED
 
 Now we're at the Git closeout. We need to be careful because targets\ contains the separately cloned Calibre-Web NextGen repository, so do not run git add ..
