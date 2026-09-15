@@ -3855,7 +3855,7 @@ Now commit Lab 4
 
 Run: git commit -m "Complete Lab 4 static analysis and candidate shortlist"
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/3a3bae99ac8edf403ac734fd91d6b08aa6de3b72/Screenshot%202026-09-14%20175509.png)
 
 The commit succeeded. 
 
