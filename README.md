@@ -3737,6 +3737,8 @@ Paste the following into lab4-static-analysis-report.md in the notepad. This is 
 
 ![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/2dfcd71332738fdc8a3f3ca4d3206a3d3c85eb31/Screenshot%202026-09-14%20172943.png)
 
+Press Ctrl+S to save
+
 verify it before doing anything else.
 
 Run: Get-Content .\reports\lab4-static-analysis-report.md
@@ -3771,6 +3773,9 @@ Run: notepad .\evidence\lab4-evidence-index.md
 Paste this into lab4-evidence-index.md. This will serve as the map showing what evidence was produced during Lab 4 and what each item demonstrates.
 
 
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/4e6749477890a08073cbe6b8b6998d61f6864531/Screenshot%202026-09-14%20174205.png)
+
+Press Ctrl+S to save.
 
 Now we verify the Lab 4 Evidence Index before the Git commit.
 
