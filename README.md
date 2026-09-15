@@ -3694,7 +3694,7 @@ Run: notepad .\notes\lab4-final-shortlist.md
 
 Paste the following into lab4-final-shortlist.md:
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/630084cbd0dd04e29fdd4b089453c4783fe62af9/Screenshot%202026-09-14%20170900.png)
 
 Back in PowerShell, run only this next: Get-Content .\notes\lab4-final-shortlist.md
 
