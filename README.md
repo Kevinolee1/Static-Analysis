@@ -3869,7 +3869,7 @@ We just need the final repository check. Run: git status --short
 
 Then: git log -1 --oneline
 
-
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/49e2d6ffe49428e2ccd98067d5370936ecaeef92/Screenshot%202026-09-14%20175740.png)
 
 The Git closeout is clean and correct.
 
