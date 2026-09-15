@@ -3709,8 +3709,7 @@ Back in PowerShell, run only this next: Get-Content .\notes\lab4-final-shortlist
 verify the file saved correctly before creating the full Lab 4 report.
 
 
-
-Run this first: Get-Content .\notes\lab4-final-shortlist.md
+![Image alt](https://github.com/Kevinolee1/Static-Analysis/blob/83da2794da13d514535053fcc1267caef5a51ecd/Screenshot%202026-09-14%20171614.png)
 
 We want the top to look like this now:
 
@@ -3718,7 +3717,6 @@ We want the top to look like this now:
 
 ## Project
 Vulnerability Research & CVE Discovery
-
 
 
 Verification passed. The encoding is fixed, the Markdown syntax is correct, all six candidates are present, the deprioritized findings are documented, and we clearly state that none are confirmed vulnerabilities.
